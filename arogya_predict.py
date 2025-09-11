@@ -269,6 +269,95 @@ class ArogyaAI:
         
         return result
     
+    def get_dosha_selection(self):
+        """Enhanced dosha selection with clear body type descriptions"""
+        
+        print("\n🌿 AYURVEDIC BODY TYPE ASSESSMENT 🌿")
+        print("=" * 50)
+        print("Select your body type based on physical characteristics:\n")
+        
+        dosha_options = {
+            '1': {
+                'name': 'Vata',
+                'constitution': 'Air_Space_Constitution',
+                'body_type': 'Thin/Lean',
+                'description': 'Naturally thin build, difficulty gaining weight, dry skin, cold hands/feet'
+            },
+            '2': {
+                'name': 'Pitta',
+                'constitution': 'Fire_Water_Constitution', 
+                'body_type': 'Medium',
+                'description': 'Medium build, good muscle tone, warm body, strong appetite'
+            },
+            '3': {
+                'name': 'Kapha',
+                'constitution': 'Earth_Water_Constitution',
+                'body_type': 'Heavy/Large',
+                'description': 'Naturally larger build, gains weight easily, cool moist skin, steady energy'
+            },
+            '4': {
+                'name': 'Vata-Pitta',
+                'constitution': 'Air_Fire_Mixed_Constitution',
+                'body_type': 'Thin to Medium',
+                'description': 'Variable build, creative energy, moderate body temperature'
+            },
+            '5': {
+                'name': 'Vata-Kapha',
+                'constitution': 'Air_Earth_Mixed_Constitution',
+                'body_type': 'Thin to Heavy',
+                'description': 'Variable patterns, irregular tendencies, sensitive to changes'
+            },
+            '6': {
+                'name': 'Pitta-Kapha',
+                'constitution': 'Fire_Earth_Mixed_Constitution',
+                'body_type': 'Medium to Heavy',
+                'description': 'Strong stable build, good strength, balanced metabolism'
+            }
+        }
+        
+        # Display options
+        for key, value in dosha_options.items():
+            print(f"{key}. {value['name']} - {value['body_type']}")
+            print(f"   {value['description']}")
+            print()
+        
+        print("You can enter:")
+        print("• Number (1-6)")  
+        print("• Dosha name (e.g., 'Vata', 'Pitta-Kapha')")
+        print("• Body type (e.g., 'thin', 'medium', 'heavy')")
+        
+        while True:
+            dosha_choice = input("\nEnter your selection: ").strip()
+            
+            # Check if it's a number
+            if dosha_choice in dosha_options:
+                selected = dosha_options[dosha_choice]
+                return selected['name'], selected['constitution']
+            
+            # Check if it's a dosha name (case insensitive)
+            dosha_choice_lower = dosha_choice.lower()
+            for option in dosha_options.values():
+                if option['name'].lower() == dosha_choice_lower:
+                    return option['name'], option['constitution']
+            
+            # Check if it's a body type description
+            body_type_mapping = {
+                'thin': '1', 'lean': '1', 'skinny': '1',
+                'medium': '2', 'average': '2', 'moderate': '2',
+                'heavy': '3', 'large': '3', 'big': '3', 'fat': '3',
+                'thin to medium': '4', 'variable thin': '4',
+                'thin to heavy': '5', 'irregular': '5',
+                'medium to heavy': '6', 'strong': '6'
+            }
+            
+            if dosha_choice_lower in body_type_mapping:
+                selected_key = body_type_mapping[dosha_choice_lower]
+                selected = dosha_options[selected_key]
+                return selected['name'], selected['constitution']
+            
+            print("❌ Invalid selection. Please try again.")
+            print("Use numbers 1-6, dosha names, or body type descriptions.")
+
     def get_user_input_interactive(self) -> Dict[str, Any]:
         """Interactive input collection"""
         print("\n" + "="*60)
@@ -304,8 +393,10 @@ class ArogyaAI:
         print(f"\nGender options: Male, Female")
         user_data['Gender'] = input("Enter your gender: ")
         
-        print(f"\nBody Type options: Vata, Pitta, Kapha, Vata-Pitta, Pitta-Kapha, Vata-Kapha")
-        user_data['Body_Type_Dosha_Sanskrit'] = input("Enter your Ayurvedic body type: ") or "Vata"
+        # Use enhanced dosha selection
+        dosha_name, dosha_constitution = self.get_dosha_selection()
+        user_data['Body_Type_Dosha_Sanskrit'] = dosha_name
+        print(f"\n✅ Selected: {dosha_name} ({dosha_constitution})")
         
         print(f"\nFood Habits options: Vegetarian, Non-Vegetarian, Vegan, Mixed")
         user_data['Food_Habits'] = input("Enter your food habits: ") or "Mixed"
