@@ -44,89 +44,48 @@ def create_demo_model():
     """
     Create a demonstration model with realistic structure
     """
-    print("Creating demonstration model with realistic Ayurvedic disease prediction...")
-    
-    # Create synthetic but realistic training data
-    np.random.seed(42)
-    n_samples = 1000
-    
-    # Disease categories from Ayurvedic perspective
-    diseases = [
-        'Jwara (Fever)', 'Kasa (Cough)', 'Shwasa (Asthma)', 'Prameha (Diabetes)',
-        'Hridroga (Heart Disease)', 'Sandhivata (Arthritis)', 'Amlapitta (Gastritis)',
-        'Shiroroga (Headache)', 'Anidra (Insomnia)', 'Shotha (Inflammation)'
-    ]
-    
-    # Symptom patterns for each disease
-    symptom_patterns = {
-        'Jwara (Fever)': ['fever', 'body ache', 'headache', 'fatigue', 'chills'],
-        'Kasa (Cough)': ['cough', 'throat pain', 'chest congestion', 'breathing difficulty'],
-        'Shwasa (Asthma)': ['breathing difficulty', 'chest tightness', 'wheezing', 'cough'],
-        'Prameha (Diabetes)': ['excessive thirst', 'frequent urination', 'fatigue', 'weight loss'],
-        'Hridroga (Heart Disease)': ['chest pain', 'shortness of breath', 'palpitations', 'fatigue'],
-        'Sandhivata (Arthritis)': ['joint pain', 'stiffness', 'swelling', 'reduced mobility'],
-        'Amlapitta (Gastritis)': ['stomach pain', 'acidity', 'nausea', 'bloating', 'heartburn'],
-        'Shiroroga (Headache)': ['headache', 'dizziness', 'nausea', 'light sensitivity'],
-        'Anidra (Insomnia)': ['sleeplessness', 'anxiety', 'fatigue', 'restlessness'],
-        'Shotha (Inflammation)': ['swelling', 'pain', 'redness', 'warmth', 'stiffness']
-    }
-    
-    # Generate synthetic dataset
-    data_rows = []
-    for i in range(n_samples):
-        # Random disease
-        disease = np.random.choice(diseases)
-        
-        # Generate symptoms based on disease pattern
-        base_symptoms = symptom_patterns[disease]
-        num_symptoms = np.random.randint(2, len(base_symptoms))
-        symptoms = np.random.choice(base_symptoms, num_symptoms, replace=False)
-        symptom_text = ', '.join(symptoms)
-        
-        # Generate other features
-        age = np.random.randint(5, 80)
-        height = np.random.normal(165, 15)  # cm
-        weight = np.random.normal(65, 15)   # kg
-        bmi = weight / (height/100)**2
-        
-        # Age group based on age
-        if age <= 12:
-            age_group = "Child"
-        elif age <= 19:
-            age_group = "Adolescent"
-        elif age <= 35:
-            age_group = "Young Adult"
-        elif age <= 50:
-            age_group = "Middle Age"
-        elif age <= 65:
-            age_group = "Senior"
-        else:
-            age_group = "Elderly"
-        
-        row = {
-            'Disease': disease,
-            'Symptoms': symptom_text,
-            'Age': age,
-            'Height_cm': height,
-            'Weight_kg': weight,
-            'BMI': bmi,
-            'Age_Group': age_group,
-            'Gender': np.random.choice(['Male', 'Female']),
-            'Body_Type_Dosha_Sanskrit': np.random.choice(['Vata', 'Pitta', 'Kapha', 'Vata-Pitta', 'Pitta-Kapha', 'Vata-Kapha']),
-            'Food_Habits': np.random.choice(['Vegetarian', 'Non-Vegetarian', 'Vegan', 'Mixed']),
-            'Current_Medication': np.random.choice(['None', 'Antibiotics', 'Pain Relief', 'Diabetes Medication', 'Heart Medication']),
-            'Allergies': np.random.choice(['None', 'Food Allergies', 'Medicine Allergies', 'Environmental Allergies']),
-            'Season': np.random.choice(['Spring', 'Summer', 'Monsoon', 'Autumn', 'Winter']),
-            'Weather': np.random.choice(['Hot', 'Cold', 'Humid', 'Dry', 'Rainy'])
-        }
-        
-        data_rows.append(row)
-    
-    # Create DataFrame
-    df = pd.DataFrame(data_rows)
-    print(f"Created synthetic dataset with {len(df)} samples and {len(diseases)} diseases")
-    
-    # Now train the model following the notebook structure
+    print("Creating model from enhanced_ayurvedic_treatment_dataset.csv...")
+
+    csv_path = 'enhanced_ayurvedic_treatment_dataset.csv'
+    try:
+        df = pd.read_csv(csv_path)
+    except Exception as e:
+        print(f"Failed to load {csv_path}: {e}")
+        print("Falling back to synthetic demo data not implemented. Aborting.")
+        raise
+
+    # Keep only the columns needed for training
+    required_cols = ['Disease', 'Symptoms', 'Age', 'Height_cm', 'Weight_kg', 'BMI',
+                     'Age_Group', 'Gender', 'Body_Type_Dosha_Sanskrit', 'Food_Habits',
+                     'Current_Medication', 'Allergies', 'Season', 'Weather']
+
+    missing = [c for c in required_cols if c not in df.columns]
+    if missing:
+        raise ValueError(f"Dataset missing required columns: {missing}")
+
+    df = df[required_cols].copy()
+
+    # Drop rows with missing essential fields
+    df = df.dropna(subset=['Disease', 'Symptoms']).reset_index(drop=True)
+
+    # Coerce numeric columns and fill missing numerics with medians
+    for col in ['Age', 'Height_cm', 'Weight_kg', 'BMI']:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+        if df[col].isna().any():
+            df[col] = df[col].fillna(df[col].median())
+
+    # Fill missing categorical with a placeholder
+    cat_cols = ['Age_Group', 'Gender', 'Body_Type_Dosha_Sanskrit', 'Food_Habits',
+                'Current_Medication', 'Allergies', 'Season', 'Weather']
+    for col in cat_cols:
+        df[col] = df[col].astype(str).fillna('Unknown').replace({'nan': 'Unknown'})
+
+    # Basic normalization for text symptoms (align with notebook: minimal cleaning)
+    df['Symptoms'] = df['Symptoms'].astype(str).str.replace('_', ' ', regex=False)
+
+    print(f"Loaded dataset with {len(df)} samples and {df['Disease'].nunique()} diseases")
+
+    # Train the model following the notebook structure
     return train_complete_model(df)
 
 def train_complete_model(df):
@@ -154,50 +113,78 @@ def train_complete_model(df):
     
     print(f"Encoded {len(categorical_columns)} categorical variables")
     
-    # 2. Feature Selection
+    # 2. Filter classes with too few samples for stratified split
+    disease_counts = df['Disease'].value_counts()
+    valid_diseases = disease_counts[disease_counts >= 2].index
+    removed = df.shape[0] - df[df['Disease'].isin(valid_diseases)].shape[0]
+    if removed > 0:
+        print(f"Filtered out {removed} samples from diseases with <2 instances for stratified split")
+    df = df[df['Disease'].isin(valid_diseases)].reset_index(drop=True)
+    if df['Disease'].nunique() == 0:
+        raise ValueError("No diseases with at least 2 samples; cannot continue training.")
+
+    # 3. Feature Selection (full dataset)
     feature_columns = ['Age', 'Height_cm', 'Weight_kg', 'BMI'] + [f'{col}_encoded' for col in categorical_columns]
-    X_other = df[feature_columns]
-    y = df['Disease_encoded']
-    
-    # 3. TF-IDF Vectorization of Symptoms
-    vectorizer = TfidfVectorizer(max_features=889, stop_words='english', ngram_range=(1,2))
-    symptoms_tfidf = vectorizer.fit_transform(df['Symptoms'])
-    
+    X_other_full = df[feature_columns]
+    y_full = df['Disease_encoded']
+
+    # 4. TF-IDF Vectorization of Symptoms on full dataset (as in notebook)
+    vectorizer = TfidfVectorizer()
+    symptoms_tfidf_full = vectorizer.fit_transform(df['Symptoms'])
+
     # Convert to DataFrame
-    tfidf_df = pd.DataFrame(symptoms_tfidf.toarray(), 
-                           columns=[f'tfidf_{i}' for i in range(symptoms_tfidf.shape[1])])
-    
-    # 4. Combine Features
-    X_combined = pd.concat([X_other.reset_index(drop=True), tfidf_df], axis=1)
-    
-    print(f"Combined feature set shape: {X_combined.shape}")
-    print(f"Total features: {X_combined.shape[1]} (12 basic + {symptoms_tfidf.shape[1]} TF-IDF)")
-    
-    # 5. Train-Test Split
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_combined, y, test_size=0.2, random_state=42, stratify=y
+    tfidf_df_full = pd.DataFrame(
+        symptoms_tfidf_full.toarray(),
+        columns=[f'tfidf_{i}' for i in range(symptoms_tfidf_full.shape[1])]
     )
-    
-    # 6. SMOTE for Handling Class Imbalance
-    # Adjust k_neighbors based on class sizes
-    min_class_size = min([sum(y_train == i) for i in np.unique(y_train)])
-    k_neighbors = min(5, min_class_size - 1)
-    
-    smote = SMOTE(random_state=42, k_neighbors=k_neighbors)
-    X_resampled, y_resampled = smote.fit_resample(X_train, y_train)
-    
-    print(f"Applied SMOTE: {X_train.shape[0]} -> {X_resampled.shape[0]} samples")
-    
-    # 7. Feature Scaling
+
+    # 5. Combine Features for full dataset
+    X_combined_full = pd.concat([X_other_full.reset_index(drop=True), tfidf_df_full], axis=1)
+
+    print(f"Combined feature set shape (full): {X_combined_full.shape}")
+    print(f"Total features: {X_combined_full.shape[1]} (12 basic + {symptoms_tfidf_full.shape[1]} TF-IDF)")
+
+    # 6. Split indices for evaluation (split only to get test indices, like notebook flow)
+    # Note: split on the base features to obtain a stable test index set
+    X_base = X_other_full
+    X_train_base, X_test_base, y_train_base, y_test = train_test_split(
+        X_base, y_full, test_size=0.2, random_state=42, stratify=y_full
+    )
+
+    # 7. SMOTE for Handling Class Imbalance on full combined data
+    # Determine k_neighbors based on global class counts (excluding singletons)
+    class_counts = y_full.value_counts()
+    min_samples = class_counts[class_counts > 1].min() if (class_counts > 1).any() else 1
+    k_neighbors = max(1, int(min_samples) - 1)
+    if min_samples <= 1:
+        print("Skipping SMOTE due to classes with <=1 sample in dataset")
+        X_resampled, y_resampled = X_combined_full, y_full
+    else:
+        smote = SMOTE(random_state=42, k_neighbors=k_neighbors)
+        X_resampled, y_resampled = smote.fit_resample(X_combined_full, y_full)
+        print(f"Applied SMOTE (full): {X_combined_full.shape[0]} -> {X_resampled.shape[0]} samples")
+
+    # 8. Feature Scaling
     scaler = StandardScaler()
     X_resampled_scaled = scaler.fit_transform(X_resampled)
-    X_test_scaled = scaler.transform(X_test)
+
+    # Recreate combined features for original test set by index and scale
+    other_features_test = X_test_base.copy()
+    tfidf_matrix_test = vectorizer.transform(df.loc[X_test_base.index, 'Symptoms'])
+    tfidf_df_test = pd.DataFrame(
+        tfidf_matrix_test.toarray(),
+        index=X_test_base.index,
+        columns=[f'tfidf_{i}' for i in range(tfidf_matrix_test.shape[1])]
+    )
+    X_test_full = pd.concat([other_features_test, tfidf_df_test], axis=1)
+    X_test_scaled = scaler.transform(X_test_full)
     
-    # 8. Model Training
+    # 9. Model Training
+    # Models aligned with notebook methodology
     models = {
-        'Random Forest': RandomForestClassifier(n_estimators=100, random_state=42),
+        'Random Forest': RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1),
         'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
-        'SVM': SVC(random_state=42, kernel='rbf', probability=True)
+        'SVM': SVC(random_state=42, kernel='rbf', probability=True),
     }
     
     trained_models = {}
@@ -210,7 +197,7 @@ def train_complete_model(df):
         # Train on resampled data
         model.fit(X_resampled_scaled, y_resampled)
         
-        # Predict on test set
+    # Predict on original test set (scaled)
         y_pred = model.predict(X_test_scaled)
         accuracy = accuracy_score(y_test, y_pred)
         
@@ -219,13 +206,15 @@ def train_complete_model(df):
         
         print(f"{name} Accuracy: {accuracy:.4f}")
     
-    # 9. Select Best Model (Random Forest typically performs best)
-    best_model_name = max(results, key=results.get)
+    # (No ensemble aggregation; reporting base models only)
+
+    # 10. Select Best Model among trained base models (exclude ensemble placeholder)
+    best_model_name = max(trained_models.keys(), key=lambda n: results.get(n, -1))
     best_model = trained_models[best_model_name]
     
     print(f"\nBest Model: {best_model_name} with accuracy: {results[best_model_name]:.4f}")
     
-    # 10. Save Everything
+    # 11. Save Everything
     model_components = {
         'model': best_model,
         'scaler': scaler,
