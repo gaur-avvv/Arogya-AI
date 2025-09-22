@@ -61,117 +61,142 @@ class ArogyaAI:
         Create comprehensive Ayurvedic recommendations database
         Maps diseases to their corresponding Ayurvedic treatments
         """
-        self.ayurvedic_database = {
-            'Jwara (Fever)': {
-                'Ayurvedic_Herbs_Sanskrit': 'Tulasi, Sunthi, Marich, Pippali, Haridra',
-                'Ayurvedic_Herbs_English': 'Holy Basil, Dry Ginger, Black Pepper, Long Pepper, Turmeric',
-                'Herbs_Effects': 'Antipyretic, immune-boosting, anti-inflammatory, digestive stimulant, antimicrobial properties',
-                'Ayurvedic_Therapies_Sanskrit': 'Langhana, Swedana, Kashaya Sevana, Pathya Ahara',
-                'Ayurvedic_Therapies_English': 'Fasting therapy, Steam therapy, Herbal decoctions, Proper diet regimen',
-                'Therapies_Effects': 'Reduces body heat, promotes sweating, detoxifies body, balances Pitta dosha, strengthens immunity',
-                'Dietary_Recommendations': 'Light, easily digestible foods, warm water, ginger tea, avoid heavy/oily foods, take rest',
-                'How_Treatment_Affects_Your_Body_Type': 'Balances aggravated Pitta dosha, cools body temperature, strengthens Ojas (immunity), cleanses Ama (toxins)'
-            },
-            
-            'Kasa (Cough)': {
-                'Ayurvedic_Herbs_Sanskrit': 'Vasa, Kantakari, Bharangi, Pushkarmool, Yashtimadhu',
-                'Ayurvedic_Herbs_English': 'Malabar Nut, Yellow Berried Nightshade, Bharangi, Elecampane, Licorice',
-                'Herbs_Effects': 'Expectorant, bronchodilator, anti-inflammatory, soothes respiratory tract, reduces cough reflex',
-                'Ayurvedic_Therapies_Sanskrit': 'Swedana, Nasya, Dhumapana, Pranayama, Gargling',
-                'Ayurvedic_Therapies_English': 'Steam inhalation, Nasal drops, Medicated smoking, Breathing exercises, Herbal gargles',
-                'Therapies_Effects': 'Opens respiratory channels, reduces Kapha congestion, soothes throat, improves lung function',
-                'Dietary_Recommendations': 'Warm foods, honey with ginger, avoid cold drinks/foods, dairy products, increase fluid intake',
-                'How_Treatment_Affects_Your_Body_Type': 'Reduces excess Kapha dosha, clears respiratory channels (Pranavaha Srotas), strengthens lung capacity'
-            },
-            
-            'Shwasa (Asthma)': {
-                'Ayurvedic_Herbs_Sanskrit': 'Vasa, Kantakari, Pushkarmool, Bharangi, Shirisha',
-                'Ayurvedic_Herbs_English': 'Malabar Nut, Yellow Berried Nightshade, Elecampane, Bharangi, Sirisha',
-                'Herbs_Effects': 'Bronchodilator, anti-asthmatic, reduces airway inflammation, improves breathing capacity',
-                'Ayurvedic_Therapies_Sanskrit': 'Swedana, Pranayama, Yoga, Nasya, Abhyanga',
-                'Ayurvedic_Therapies_English': 'Steam therapy, Breathing exercises, Yoga practice, Nasal therapy, Oil massage',
-                'Therapies_Effects': 'Opens airways, reduces respiratory inflammation, calms nervous system, strengthens respiratory muscles',
-                'Dietary_Recommendations': 'Warm, light foods, avoid cold/heavy foods, dairy, processed foods, practice regular breathing exercises',
-                'How_Treatment_Affects_Your_Body_Type': 'Balances Vata and Kapha doshas, opens Pranavaha Srotas, reduces bronchial hypersensitivity'
-            },
-            
-            'Prameha (Diabetes)': {
-                'Ayurvedic_Herbs_Sanskrit': 'Guduchi, Meshashringi, Vijaysar, Haridra, Amalaki',
-                'Ayurvedic_Herbs_English': 'Tinospora, Gymnema, Indian Kino, Turmeric, Amla',
-                'Herbs_Effects': 'Hypoglycemic, improves insulin sensitivity, pancreatic tonic, antioxidant, metabolic regulator',
-                'Ayurvedic_Therapies_Sanskrit': 'Panchakarma, Udvartana, Yoga, Pranayama, Dhanyamla Dhara',
-                'Ayurvedic_Therapies_English': 'Detoxification, Dry powder massage, Yoga, Breathing exercises, Fermented liquid massage',
-                'Therapies_Effects': 'Improves metabolism, reduces insulin resistance, detoxifies body, balances blood sugar',
-                'Dietary_Recommendations': 'Low glycemic foods, bitter vegetables, whole grains, avoid sugar/refined carbs, regular meal times',
-                'How_Treatment_Affects_Your_Body_Type': 'Reduces Kapha dosha, improves Agni (digestive fire), regulates Ojas, balances metabolism'
-            },
-            
-            'Hridroga (Heart Disease)': {
-                'Ayurvedic_Herbs_Sanskrit': 'Arjuna, Punarnava, Brahmi, Shankhpushpi, Dashmoolarishta',
-                'Ayurvedic_Herbs_English': 'Arjuna bark, Punarnava, Brahmi, Convolvulus, Ten roots tonic',
-                'Herbs_Effects': 'Cardiotonic, reduces blood pressure, strengthens heart muscle, improves circulation, stress reducer',
-                'Ayurvedic_Therapies_Sanskrit': 'Hridaya Basti, Shirodhara, Abhyanga, Pranayama, Yoga',
-                'Ayurvedic_Therapies_English': 'Heart oil pooling, Oil pouring therapy, Body massage, Breathing exercises, Yoga',
-                'Therapies_Effects': 'Strengthens heart, calms nervous system, improves circulation, reduces stress and anxiety',
-                'Dietary_Recommendations': 'Heart-healthy foods, omega-3 rich foods, avoid saturated fats, reduce salt, practice meditation',
-                'How_Treatment_Affects_Your_Body_Type': 'Calms Vata dosha, nourishes heart tissue (Hridaya), improves Prana flow, reduces Pitta heat'
-            },
-            
-            'Sandhivata (Arthritis)': {
-                'Ayurvedic_Herbs_Sanskrit': 'Guggulu, Shallaki, Rasna, Nirgundi, Ashwagandha',
-                'Ayurvedic_Herbs_English': 'Guggul, Boswellia, Rasna, Five-leaved chaste tree, Winter cherry',
-                'Herbs_Effects': 'Anti-inflammatory, joint nourishing, pain reliever, tissue regenerator, strengthens bones',
-                'Ayurvedic_Therapies_Sanskrit': 'Abhyanga, Swedana, Janu Basti, Kati Basti, Pizhichil',
-                'Ayurvedic_Therapies_English': 'Oil massage, Steam therapy, Knee oil pooling, Lower back oil pooling, Oil bath',
-                'Therapies_Effects': 'Reduces joint stiffness, improves mobility, nourishes joints, reduces pain and inflammation',
-                'Dietary_Recommendations': 'Anti-inflammatory foods, warm cooked meals, ghee, avoid cold/dry foods, nightshades',
-                'How_Treatment_Affects_Your_Body_Type': 'Pacifies Vata dosha, nourishes Asthi Dhatu (bone tissue), improves joint lubrication'
-            },
-            
-            'Amlapitta (Gastritis)': {
-                'Ayurvedic_Herbs_Sanskrit': 'Yashtimadhu, Amalaki, Shatavari, Guduchi, Kamadudha',
-                'Ayurvedic_Herbs_English': 'Licorice, Amla, Asparagus, Tinospora, Calcium compound',
-                'Herbs_Effects': 'Antacid, gastro-protective, heals ulcers, reduces acidity, soothes stomach lining',
-                'Ayurvedic_Therapies_Sanskrit': 'Takradhara, Virechana (mild), Sheetali Pranayama',
-                'Ayurvedic_Therapies_English': 'Buttermilk therapy, Gentle purgation, Cooling breathing',
-                'Therapies_Effects': 'Cools stomach, reduces acid production, heals gastric ulcers, balances digestive fire',
-                'Dietary_Recommendations': 'Cooling foods, avoid spicy/oily/acidic foods, eat regular meals, coconut water, fennel tea',
-                'How_Treatment_Affects_Your_Body_Type': 'Reduces Pitta dosha, cools Agni, heals gastric mucosa, balances acid-alkaline ratio'
-            },
-            
-            'Shiroroga (Headache)': {
-                'Ayurvedic_Herbs_Sanskrit': 'Brahmi, Shankhpushpi, Jatamansi, Saraswatarishta, Shirashooladi Vajra',
-                'Ayurvedic_Herbs_English': 'Brahmi, Convolvulus, Spikenard, Saraswata tonic, Headache relief compound',
-                'Herbs_Effects': 'Neurocalming, reduces headache intensity, improves mental clarity, stress reliever',
-                'Ayurvedic_Therapies_Sanskrit': 'Shiropichu, Shirobasti, Nasya, Akshi Tarpana',
-                'Ayurvedic_Therapies_English': 'Head oil application, Oil pooling on head, Nasal therapy, Eye treatments',
-                'Therapies_Effects': 'Soothes nervous system, improves head circulation, reduces tension, calms mind',
-                'Dietary_Recommendations': 'Regular meals, avoid triggers, cooling foods, adequate hydration, stress management',
-                'How_Treatment_Affects_Your_Body_Type': 'Balances Vata and Pitta doshas, calms Majja Dhatu (nervous tissue), reduces head tension'
-            },
-            
-            'Anidra (Insomnia)': {
-                'Ayurvedic_Herbs_Sanskrit': 'Brahmi, Shankhpushpi, Jatamansi, Ashwagandha, Saraswatarishta',
-                'Ayurvedic_Herbs_English': 'Brahmi, Convolvulus, Spikenard, Winter cherry, Saraswata tonic',
-                'Herbs_Effects': 'Natural sedative, calms mind, reduces anxiety, promotes restful sleep, neuroprotective',
-                'Ayurvedic_Therapies_Sanskrit': 'Shirodhara, Abhyanga, Padabhyanga, Yoga Nidra, Meditation',
-                'Ayurvedic_Therapies_English': 'Oil pouring therapy, Body massage, Foot massage, Yogic sleep, Meditation',
-                'Therapies_Effects': 'Deeply relaxes nervous system, calms Vata dosha, promotes natural sleep cycles',
-                'Dietary_Recommendations': 'Light dinner, warm milk with nutmeg, avoid caffeine/stimulants, regular sleep schedule',
-                'How_Treatment_Affects_Your_Body_Type': 'Pacifies Vata dosha, calms Rajas (mental activity), promotes Sattva (mental clarity)'
-            },
-            
-            'Shotha (Inflammation)': {
-                'Ayurvedic_Herbs_Sanskrit': 'Punarnava, Gokshura, Haridra, Guggulu, Triphala',
-                'Ayurvedic_Herbs_English': 'Punarnava, Gokshura, Turmeric, Guggul, Three fruits',
-                'Herbs_Effects': 'Anti-inflammatory, reduces swelling, diuretic, detoxifying, tissue healing',
-                'Ayurvedic_Therapies_Sanskrit': 'Lepa (Poultice), Abhyanga, Swedana, Panchakarma',
-                'Ayurvedic_Therapies_English': 'Herbal paste application, Oil massage, Steam therapy, Detoxification',
-                'Therapies_Effects': 'Reduces inflammation, improves circulation, promotes healing, eliminates toxins',
-                'Dietary_Recommendations': 'Anti-inflammatory foods, turmeric, ginger, avoid inflammatory foods, increase water intake',
-                'How_Treatment_Affects_Your_Body_Type': 'Reduces Pitta and Kapha doshas, eliminates Ama (toxins), improves tissue healing'
-            }
+        csv_path = os.path.join(os.getcwd(), 'enhanced_ayurvedic_treatment_dataset.csv')
+
+        def _clean_text(val: str) -> str:
+            if pd.isna(val):
+                return ''
+            s = str(val).strip()
+            # split on pipes to separate multi-part effects and join later
+            return s.replace('_', ' ').replace(' ,', ',').replace('  ', ' ').strip()
+
+        def _aggregate(series: pd.Series) -> str:
+            if series is None or series.empty:
+                return ''
+            parts: list[str] = []
+            for raw in series.dropna().astype(str):
+                # split by '|' to preserve multiple effect phrases
+                split_items = [p.strip() for p in str(raw).split('|') if p and p.strip().lower() != 'nan']
+                for item in split_items:
+                    cleaned = _clean_text(item)
+                    if cleaned and cleaned not in parts:
+                        parts.append(cleaned)
+            return '; '.join(parts)
+
+        columns_to_keep = [
+            'Ayurvedic_Herbs_Sanskrit',
+            'Ayurvedic_Herbs_English',
+            'Herbs_Effects',
+            'Ayurvedic_Therapies_Sanskrit',
+            'Ayurvedic_Therapies_English',
+            'Therapies_Effects',
+            'Dietary_Recommendations',
+            'How_Treatment_Affects_Your_Body_Type',
+        ]
+
+        # Default minimal fallback in case CSV read fails
+        default_reco = {
+            'Ayurvedic_Herbs_Sanskrit': 'Amalaki, Haridra, Tulasi',
+            'Ayurvedic_Herbs_English': 'Amla, Turmeric, Holy Basil',
+            'Herbs_Effects': 'General immunity boost; Anti-inflammatory; Antioxidant',
+            'Ayurvedic_Therapies_Sanskrit': 'Abhyanga, Pranayama, Yoga',
+            'Ayurvedic_Therapies_English': 'Oil massage, Breathing exercises, Yoga',
+            'Therapies_Effects': 'General wellness; Stress reduction; Improved circulation',
+            'Dietary_Recommendations': 'Balanced diet; Fresh foods; Adequate water; Regular meals',
+            'How_Treatment_Affects_Your_Body_Type': 'General balancing of doshas; Promotes overall health',
         }
+
+        if not os.path.exists(csv_path):
+            print(f"⚠️ Ayurvedic CSV not found at {csv_path}. Using minimal fallback recommendations.")
+            self.ayurvedic_database = {}
+            return
+
+        try:
+            df = pd.read_csv(csv_path)
+            if 'Disease' not in df.columns:
+                raise ValueError("CSV missing required 'Disease' column")
+
+            # Normalize disease names
+            df['Disease'] = df['Disease'].astype(str).str.strip()
+
+            # Build mapping by aggregating all rows per disease
+            ayur_map: Dict[str, Dict[str, str]] = {}
+            grouped = df.groupby('Disease', sort=True)
+            for disease, g in grouped:
+                entry: Dict[str, str] = {}
+                for col in columns_to_keep:
+                    if col in g.columns:
+                        entry[col] = _aggregate(g[col])
+                    else:
+                        entry[col] = ''
+
+                # Ensure some sensible fallback text if fields are empty
+                for k, v in list(entry.items()):
+                    if not v:
+                        entry[k] = default_reco.get(k, '')
+
+                ayur_map[disease] = entry
+
+            self.ayurvedic_database = ayur_map
+            print(f"✅ Loaded Ayurvedic recommendations for {len(self.ayurvedic_database)} diseases from CSV")
+
+        except Exception as e:
+            print(f"⚠️ Failed to load Ayurvedic recommendations from CSV: {e}")
+            self.ayurvedic_database = {}
+    
+    # -----------------------------
+    # Display helpers (compact view)
+    # -----------------------------
+    def _compact_listlike(self, text: str, max_items: int = 6) -> str:
+        """Turn a long aggregated list (with ';' and ',') into unique, concise comma list."""
+        if not text:
+            return ''
+        items: list[str] = []
+        # split on semicolons first, then commas
+        for seg in str(text).split(';'):
+            for token in seg.split(','):
+                t = token.strip()
+                if not t or t.lower() == 'nan':
+                    continue
+                if t not in items:
+                    items.append(t)
+        return ', '.join(items[:max_items])
+
+    def _compact_phrases(self, text: str, max_items: int = 4) -> str:
+        """Keep unique phrases separated by ';' and cap the count."""
+        if not text:
+            return ''
+        phrases: list[str] = []
+        for seg in str(text).split(';'):
+            t = seg.strip()
+            if not t or t.lower() == 'nan':
+                continue
+            if t not in phrases:
+                phrases.append(t)
+        return '; '.join(phrases[:max_items])
+
+    def format_for_display(self, result: Dict[str, Any]) -> Dict[str, Any]:
+        """Return a shallow copy of result with compact, readable fields for printing."""
+        d = dict(result)
+        # List-like fields (herbs and therapies names)
+        for key in [
+            'Ayurvedic_Herbs_Sanskrit',
+            'Ayurvedic_Herbs_English',
+            'Ayurvedic_Therapies_Sanskrit',
+            'Ayurvedic_Therapies_English',
+        ]:
+            d[key] = self._compact_listlike(d.get(key, ''), max_items=6)
+
+        # Phrase-like fields (effects, diet)
+        for key, cap in [
+            ('Herbs_Effects', 4),
+            ('Therapies_Effects', 4),
+            ('Dietary_Recommendations', 4),
+        ]:
+            d[key] = self._compact_phrases(d.get(key, ''), max_items=cap)
+
+        # Keep personalized effects as-is
+        return d
     
     def preprocess_user_input(self, user_data: Dict[str, Any]) -> np.ndarray:
         """Preprocess user input for prediction"""
@@ -229,29 +254,65 @@ class ArogyaAI:
         processed_features = self.preprocess_user_input(user_data)
         
         # Make prediction
-        prediction = self.model_components['model'].predict(processed_features)
-        prediction_proba = self.model_components['model'].predict_proba(processed_features)
+        model = self.model_components['model']
+        prediction = model.predict(processed_features)
+        prediction_proba = model.predict_proba(processed_features)
         
         # Get disease name
         predicted_disease = self.model_components['encoders']['Disease'].inverse_transform(prediction)[0]
         confidence = np.max(prediction_proba)
+
+        # Compute Top-5 predictions
+        proba_vec = prediction_proba[0]
+        idx_sorted = np.argsort(proba_vec)[::-1]
+        topk_idx = idx_sorted[:5]
+        class_indices = model.classes_
+        encoder = self.model_components['encoders']['Disease']
+        topk_names = encoder.inverse_transform(class_indices[topk_idx])
+        top5 = [
+            {
+                'Disease': str(name),
+                'Confidence': float(proba_vec[i])
+            }
+            for name, i in zip(topk_names, topk_idx)
+        ]
         
         # Get Ayurvedic recommendations
         body_type = user_data.get('Body_Type_Dosha_Sanskrit', 'Unknown')
-        
-        if predicted_disease in self.ayurvedic_database:
-            ayurvedic_recommendations = self.ayurvedic_database[predicted_disease].copy()
-        else:
-            # Default recommendations
+
+        ayurvedic_recommendations = None
+        if isinstance(self.ayurvedic_database, dict) and self.ayurvedic_database:
+            # 1) Exact match
+            if predicted_disease in self.ayurvedic_database:
+                ayurvedic_recommendations = self.ayurvedic_database[predicted_disease].copy()
+            else:
+                # 2) Case-insensitive match
+                keys_lower = {k.lower(): k for k in self.ayurvedic_database.keys()}
+                key_ci = keys_lower.get(predicted_disease.lower())
+                if key_ci:
+                    ayurvedic_recommendations = self.ayurvedic_database[key_ci].copy()
+                else:
+                    # 3) Partial match
+                    cand = None
+                    pred_lower = predicted_disease.lower()
+                    for k in self.ayurvedic_database.keys():
+                        if pred_lower in k.lower() or k.lower() in pred_lower:
+                            cand = k
+                            break
+                    if cand:
+                        ayurvedic_recommendations = self.ayurvedic_database[cand].copy()
+
+        if ayurvedic_recommendations is None:
+            # Default recommendations if mapping unavailable
             ayurvedic_recommendations = {
                 'Ayurvedic_Herbs_Sanskrit': 'Amalaki, Haridra, Tulasi',
                 'Ayurvedic_Herbs_English': 'Amla, Turmeric, Holy Basil',
-                'Herbs_Effects': 'General immunity boost, anti-inflammatory, antioxidant',
+                'Herbs_Effects': 'General immunity boost; Anti-inflammatory; Antioxidant',
                 'Ayurvedic_Therapies_Sanskrit': 'Abhyanga, Pranayama, Yoga',
                 'Ayurvedic_Therapies_English': 'Oil massage, Breathing exercises, Yoga',
-                'Therapies_Effects': 'General wellness, stress reduction, improved circulation',
-                'Dietary_Recommendations': 'Balanced diet, fresh foods, adequate water, regular meals',
-                'How_Treatment_Affects_Your_Body_Type': 'General balancing of doshas, promotes overall health'
+                'Therapies_Effects': 'General wellness; Stress reduction; Improved circulation',
+                'Dietary_Recommendations': 'Balanced diet; Fresh foods; Adequate water; Regular meals',
+                'How_Treatment_Affects_Your_Body_Type': 'General balancing of doshas; Promotes overall health'
             }
         
         # Personalize for body type
@@ -264,6 +325,7 @@ class ArogyaAI:
             'Confidence': float(confidence),
             'User_Symptoms': user_data.get('Symptoms', ''),
             'User_Body_Type': body_type,
+            'Top_5_Predictions': top5,
             **ayurvedic_recommendations
         }
         
@@ -470,26 +532,31 @@ def demo_sample_prediction():
         
         try:
             result = ai_system.predict_disease_with_recommendations(case['data'])
+            display = ai_system.format_for_display(result)
             
             print(f"\n📋 PREDICTION RESULTS:")
-            print(f"   Predicted Disease: {result['Predicted_Disease']}")
-            print(f"   Confidence: {result['Confidence']:.2%}")
-            print(f"   Symptoms: {result['User_Symptoms']}")
-            print(f"   Body Type: {result['User_Body_Type']}")
+            print(f"   Predicted Disease: {display['Predicted_Disease']}")
+            print(f"   Confidence: {display['Confidence']:.2%}")
+            if 'Top_5_Predictions' in result:
+                print("   Top 5 candidates:")
+                for i, item in enumerate(result['Top_5_Predictions'], start=1):
+                    print(f"     {i}. {item['Disease']} ({item['Confidence']:.2%})")
+            print(f"   Symptoms: {display['User_Symptoms']}")
+            print(f"   Body Type: {display['User_Body_Type']}")
             
             print(f"\n🌿 AYURVEDIC RECOMMENDATIONS:")
-            print(f"   Sanskrit Herbs: {result['Ayurvedic_Herbs_Sanskrit']}")
-            print(f"   English Herbs: {result['Ayurvedic_Herbs_English']}")
-            print(f"   Herb Effects: {result['Herbs_Effects']}")
-            print(f"   Sanskrit Therapies: {result['Ayurvedic_Therapies_Sanskrit']}")
-            print(f"   English Therapies: {result['Ayurvedic_Therapies_English']}")
-            print(f"   Therapy Effects: {result['Therapies_Effects']}")
+            print(f"   Sanskrit Herbs: {display['Ayurvedic_Herbs_Sanskrit']}")
+            print(f"   English Herbs: {display['Ayurvedic_Herbs_English']}")
+            print(f"   Herb Effects: {display['Herbs_Effects']}")
+            print(f"   Sanskrit Therapies: {display['Ayurvedic_Therapies_Sanskrit']}")
+            print(f"   English Therapies: {display['Ayurvedic_Therapies_English']}")
+            print(f"   Therapy Effects: {display['Therapies_Effects']}")
             
             print(f"\n🍽️ DIETARY RECOMMENDATIONS:")
-            print(f"   {result['Dietary_Recommendations']}")
+            print(f"   {display['Dietary_Recommendations']}")
             
             print(f"\n👤 PERSONALIZED TREATMENT EFFECTS:")
-            print(f"   {result['How_Treatment_Affects_Your_Body_Type']}")
+            print(f"   {display['How_Treatment_Affects_Your_Body_Type']}")
             
         except Exception as e:
             print(f"❌ Error in prediction: {str(e)}")
@@ -510,26 +577,31 @@ def interactive_mode():
     
     try:
         result = ai_system.predict_disease_with_recommendations(user_input)
+        display = ai_system.format_for_display(result)
         
         print(f"\n📋 MEDICAL PREDICTION:")
-        print(f"   Disease: {result['Predicted_Disease']}")
-        print(f"   Confidence: {result['Confidence']:.2%}")
+        print(f"   Disease: {display['Predicted_Disease']}")
+        print(f"   Confidence: {display['Confidence']:.2%}")
+        if 'Top_5_Predictions' in result:
+            print("   Top 5 candidates:")
+            for i, item in enumerate(result['Top_5_Predictions'], start=1):
+                print(f"     {i}. {item['Disease']} ({item['Confidence']:.2%})")
         
         print(f"\n🌿 AYURVEDIC TREATMENT PLAN:")
-        print(f"   Sanskrit Herbs: {result['Ayurvedic_Herbs_Sanskrit']}")
-        print(f"   English Herbs: {result['Ayurvedic_Herbs_English']}")
-        print(f"   Herb Benefits: {result['Herbs_Effects']}")
+        print(f"   Sanskrit Herbs: {display['Ayurvedic_Herbs_Sanskrit']}")
+        print(f"   English Herbs: {display['Ayurvedic_Herbs_English']}")
+        print(f"   Herb Benefits: {display['Herbs_Effects']}")
         
         print(f"\n💆 THERAPEUTIC TREATMENTS:")
-        print(f"   Sanskrit Therapies: {result['Ayurvedic_Therapies_Sanskrit']}")
-        print(f"   English Therapies: {result['Ayurvedic_Therapies_English']}")
-        print(f"   Treatment Benefits: {result['Therapies_Effects']}")
+        print(f"   Sanskrit Therapies: {display['Ayurvedic_Therapies_Sanskrit']}")
+        print(f"   English Therapies: {display['Ayurvedic_Therapies_English']}")
+        print(f"   Treatment Benefits: {display['Therapies_Effects']}")
         
         print(f"\n🥗 DIETARY GUIDANCE:")
-        print(f"   {result['Dietary_Recommendations']}")
+        print(f"   {display['Dietary_Recommendations']}")
         
         print(f"\n🎯 PERSONALIZED TREATMENT EFFECTS:")
-        print(f"   {result['How_Treatment_Affects_Your_Body_Type']}")
+        print(f"   {display['How_Treatment_Affects_Your_Body_Type']}")
         
         # Save results
         print(f"\n💾 Results saved for your reference.")
