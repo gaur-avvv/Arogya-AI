@@ -38,19 +38,7 @@ python train_model.py
 ```
 This creates `random_forest_model.pkl` with all necessary components.
 
-### 3. Use the System
-
-#### Option A: Web Interface (Recommended)
-```bash
-python app.py
-```
-Then open your browser to: `http://localhost:5000`
-
-**Or use the startup scripts:**
-- Linux/Mac: `./start_web.sh`
-- Windows: `start_web.bat`
-
-#### Option B: Command Line
+### 3. Run the Model
 ```bash
 python arogya_predict.py
 ```
