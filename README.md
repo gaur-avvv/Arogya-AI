@@ -55,26 +55,6 @@ Then open your browser to: `http://localhost:5000`
 python arogya_predict.py
 ```
 
-## 🌐 Web Interface
-
-**NEW!** Arogya AI now includes a beautiful web interface that provides:
-
-- **User-friendly form** similar to Symptoma AI
-- **Responsive design** for desktop, tablet, and mobile
-- **Real-time predictions** with comprehensive Ayurvedic recommendations
-- **Print functionality** for offline reference
-- **Interactive results** display
-
-### Web Interface Features:
-- Comprehensive health assessment form
-- All required fields with helpful descriptions
-- Instant disease prediction with confidence scores
-- Complete Ayurvedic treatment plans
-- Beautiful, professional presentation
-
-![Web Interface](https://github.com/user-attachments/assets/51d12133-9164-4186-aff6-d717b28e4f95)
-
-![Prediction Results](https://github.com/user-attachments/assets/4cec80dd-7e96-4771-8a1e-48b7d00fce4b)
 
 ## Sample Output
 
@@ -130,49 +110,7 @@ python arogya_predict.py
 - Anidra (Insomnia)
 - Shotha (Inflammation)
 
-## Usage Modes
 
-### 1. Web Interface (Recommended - NEW!)
-A modern, user-friendly web application with:
-- Comprehensive health assessment form
-- Real-time disease prediction
-- Beautiful results display
-- Mobile-responsive design
-- Print functionality
-
-```bash
-python app.py
-# Open browser to http://localhost:5000
-```
-
-### 2. Demo Mode (Command Line)
-Runs sample predictions with pre-defined test cases.
-
-### 3. Interactive Mode (Command Line)
-Collects user symptoms and health information interactively.
-
-### 4. API Integration (Ready)
-The system is designed to be easily integrated into web applications or APIs.
-
-## File Structure
-
-```
-├── train_model.py           # Model training script
-├── arogya_predict.py        # Main prediction system
-├── disease_prediction_system.py  # Alternative comprehensive implementation
-├── app.py                   # Flask web application (NEW!)
-├── start_web.sh            # Linux/Mac startup script (NEW!)
-├── start_web.bat           # Windows startup script (NEW!)
-├── requirements.txt         # Python dependencies
-├── random_forest_model.pkl  # Trained model (generated)
-├── templates/              # Web interface templates (NEW!)
-│   └── index.html          # Main web page
-├── static/                 # Web interface assets (NEW!)
-│   ├── css/style.css       # Custom styles
-│   └── js/script.js        # Frontend JavaScript
-├── README_WEB_INTERFACE.md # Web interface documentation (NEW!)
-└── AyurCore.ipynb          # Original research notebook
-```
 
 ## Technical Implementation
 
@@ -195,7 +133,7 @@ The system includes a comprehensive database of traditional Ayurvedic treatments
 ## Future Enhancements
 
 - ~~Integration with real medical datasets~~ ✅ **DONE**
-- ~~Web interface for easier access~~ ✅ **COMPLETED**
+- Web interface for easier access
 - Mobile application
 - Multi-language support
 - Advanced NLP for symptom processing
