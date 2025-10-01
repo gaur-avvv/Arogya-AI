@@ -23,6 +23,11 @@ share/python-wheels/
 *.egg
 MANIFEST
 
+# Model files
+*.pkl
+*.model
+*.joblib
+
 # Temporary demo files
 demo_enhanced_dosha.py
 

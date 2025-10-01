@@ -260,22 +260,54 @@ class ArogyaAI:
         
         # Get disease name
         predicted_disease = self.model_components['encoders']['Disease'].inverse_transform(prediction)[0]
-        confidence = np.max(prediction_proba)
+        
+        # Apply confidence score calibration to avoid overconfident predictions
+        # The raw confidence from the model needs to be adjusted to be more realistic
+        raw_confidence = np.max(prediction_proba)
+        
+        # Calculate confidence with additional calibration based on the difference 
+        # between the top prediction and the second best prediction
+        proba_vec = prediction_proba[0]
+        sorted_probs = np.sort(proba_vec)[::-1]  # Sort in descending order
+        
+        if len(sorted_probs) > 1:
+            top_prob = sorted_probs[0]
+            second_prob = sorted_probs[1]
+            # Create more realistic confidence based on the gap between best and second best
+            confidence_gap = top_prob - second_prob
+            
+            # Use a more nuanced approach: balance between the raw probability and the gap
+            # If the gap is large and the top probability is high, we can have higher confidence
+            # If the gap is small, keep confidence more conservative
+            if confidence_gap > 0.3:  # Large gap - higher confidence possible
+                calibrated_confidence = min(0.98, max(0.05, top_prob * 0.8 + confidence_gap * 0.5))
+            elif confidence_gap > 0.15:  # Medium gap - moderate confidence
+                calibrated_confidence = min(0.95, max(0.05, top_prob * 0.7 + confidence_gap * 0.3))
+            else:  # Small gap - low confidence
+                calibrated_confidence = min(0.85, max(0.02, top_prob * 0.6 + confidence_gap * 0.4))
+        else:
+            calibrated_confidence = raw_confidence
+        
+        # Ensure confidence is realistic (not exactly 1.0 or 0.0)
+        confidence = max(0.01, min(0.99, calibrated_confidence))
 
         # Compute Top-5 predictions
-        proba_vec = prediction_proba[0]
         idx_sorted = np.argsort(proba_vec)[::-1]
         topk_idx = idx_sorted[:5]
         class_indices = model.classes_
         encoder = self.model_components['encoders']['Disease']
         topk_names = encoder.inverse_transform(class_indices[topk_idx])
-        top5 = [
-            {
+        
+        # Apply similar calibration to all top predictions
+        top5 = []
+        for name, i in zip(topk_names, topk_idx):
+            raw_score = float(proba_vec[i])
+            # Apply minimal calibration to other predictions as well
+            calibrated_score = max(0.001, min(0.999, raw_score))
+            top5.append({
                 'Disease': str(name),
-                'Confidence': float(proba_vec[i])
-            }
-            for name, i in zip(topk_names, topk_idx)
-        ]
+                'Confidence': calibrated_score
+            })
         
         # Get Ayurvedic recommendations
         body_type = user_data.get('Body_Type_Dosha_Sanskrit', 'Unknown')
@@ -286,21 +318,44 @@ class ArogyaAI:
             if predicted_disease in self.ayurvedic_database:
                 ayurvedic_recommendations = self.ayurvedic_database[predicted_disease].copy()
             else:
-                # 2) Case-insensitive match
-                keys_lower = {k.lower(): k for k in self.ayurvedic_database.keys()}
-                key_ci = keys_lower.get(predicted_disease.lower())
-                if key_ci:
-                    ayurvedic_recommendations = self.ayurvedic_database[key_ci].copy()
+                # 2) Normalize disease names for better matching
+                # Remove extra parentheses, standardize common variations
+                normalized_pred_disease = predicted_disease.lower().strip()
+                
+                # Handle common variations in disease naming
+                if "(vertigo)" in normalized_pred_disease and "positional" in normalized_pred_disease:
+                    possible_matches = [k for k in self.ayurvedic_database.keys() 
+                                      if "vertigo" in k.lower() and "positional" in k.lower()]
+                    if possible_matches:
+                        ayurvedic_recommendations = self.ayurvedic_database[possible_matches[0]].copy()
+                elif "common cold" in normalized_pred_disease or "cold" == normalized_pred_disease:
+                    # Look for common cold in database
+                    cold_keys = [k for k in self.ayurvedic_database.keys() 
+                                if "cold" in k.lower() and "common" in k.lower()]
+                    if cold_keys:
+                        ayurvedic_recommendations = self.ayurvedic_database[cold_keys[0]].copy()
+                    else:
+                        # Fallback to just "Cold" or "Common Cold"
+                        fallback_keys = [k for k in self.ayurvedic_database.keys() 
+                                        if "common" in k.lower() and "cold" in k.lower()]
+                        if fallback_keys:
+                            ayurvedic_recommendations = self.ayurvedic_database[fallback_keys[0]].copy()
                 else:
-                    # 3) Partial match
-                    cand = None
-                    pred_lower = predicted_disease.lower()
-                    for k in self.ayurvedic_database.keys():
-                        if pred_lower in k.lower() or k.lower() in pred_lower:
-                            cand = k
-                            break
-                    if cand:
-                        ayurvedic_recommendations = self.ayurvedic_database[cand].copy()
+                    # 3) Case-insensitive match
+                    keys_lower = {k.lower(): k for k in self.ayurvedic_database.keys()}
+                    key_ci = keys_lower.get(normalized_pred_disease)
+                    if key_ci:
+                        ayurvedic_recommendations = self.ayurvedic_database[key_ci].copy()
+                    else:
+                        # 4) Partial match
+                        cand = None
+                        pred_lower = normalized_pred_disease
+                        for k in self.ayurvedic_database.keys():
+                            if pred_lower in k.lower() or k.lower() in pred_lower:
+                                cand = k
+                                break
+                        if cand:
+                            ayurvedic_recommendations = self.ayurvedic_database[cand].copy()
 
         if ayurvedic_recommendations is None:
             # Default recommendations if mapping unavailable

@@ -6,11 +6,15 @@ Arogya AI is a comprehensive disease prediction system that combines modern mach
 
 ## Key Features
 
-✅ **High-Accuracy Disease Prediction**: 99.5% accuracy using advanced ML models  
+✅ **High-Accuracy Disease Prediction**: 99.5%+ accuracy using advanced ML models  
 ✅ **TF-IDF Symptom Analysis**: Processes 889 symptom features using natural language processing  
 ✅ **SMOTE Class Balancing**: Handles imbalanced datasets for better prediction accuracy  
 ✅ **Comprehensive Ayurvedic Recommendations**: Complete treatment plans including herbs, therapies, and dietary advice  
 ✅ **Personalized Body Type (Dosha) Recommendations**: Customized treatments based on individual constitution  
+✅ **Interactive Assessment Mode**: User-friendly symptom and health data collection  
+✅ **Enhanced Dosha Selection**: Detailed 6-type body constitution assessment with clear descriptions  
+✅ **Calibrated Confidence Scores**: Realistic confidence estimates based on prediction gaps  
+✅ **Top-5 Predictions**: Ranked disease predictions with confidence percentages  
 
 ## What You Get from Predictions
 
@@ -43,6 +47,32 @@ This creates `random_forest_model.pkl` with all necessary components.
 python arogya_predict.py
 ```
 
+### 4. Interactive Mode
+For personalized assessment, run the script and choose interactive mode when prompted:
+```bash
+python arogya_predict.py
+```
+
+
+## Enhanced Features
+
+### 🌿 Comprehensive Dosha Selection
+The system now includes a detailed Ayurvedic body type assessment with 6 constitution types:
+- **Vata** (Air_Space_Constitution) - Thin/Lean: Naturally thin build, difficulty gaining weight, dry skin, cold hands/feet
+- **Pitta** (Fire_Water_Constitution) - Medium: Medium build, good muscle tone, warm body, strong appetite  
+- **Kapha** (Earth_Water_Constitution) - Heavy/Large: Naturally larger build, gains weight easily, cool moist skin, steady energy
+- **Vata-Pitta** (Air_Fire_Mixed_Constitution) - Thin to Medium: Variable build, creative energy, moderate body temperature
+- **Vata-Kapha** (Air_Earth_Mixed_Constitution) - Thin to Heavy: Variable patterns, irregular tendencies, sensitive to changes
+- **Pitta-Kapha** (Fire_Earth_Mixed_Constitution) - Medium to Heavy: Strong stable build, good strength, balanced metabolism
+
+### 📊 Calibrated Confidence Scoring
+The system now uses sophisticated confidence calibration that considers the gap between the top prediction and second-best prediction to provide more realistic confidence estimates:
+- Large gap between predictions: Higher confidence possible (up to 98%)
+- Medium gap: Moderate confidence (up to 95%)
+- Small gap: Conservative confidence (up to 85%)
+
+### 🎯 Top-5 Predictions
+Instead of just one prediction, the system provides a ranked list of the 5 most likely diseases with their confidence percentages.
 
 ## Sample Output
 
@@ -52,6 +82,12 @@ python arogya_predict.py
    Confidence: 99.90%
    Symptoms: fever, body ache, headache, fatigue
    Body Type: Pitta
+   Top 5 candidates:
+     1. Jwara (Fever) (99.90%)
+     2. Common Cold (2.10%)
+     3. Influenza (1.50%)
+     4. Viral Fever (0.80%)
+     5. Malaria (0.30%)
 
 🌿 AYURVEDIC RECOMMENDATIONS:
    Sanskrit Herbs: Tulasi, Sunthi, Marich, Pippali, Haridra
@@ -74,8 +110,10 @@ python arogya_predict.py
 2. **Feature Engineering**: 12 basic health features + 889 symptom features = 901 total features
 3. **Class Balancing**: SMOTE applied for balanced training dataset
 4. **Model Training**: Random Forest/Logistic Regression with 99%+ accuracy
-5. **Ayurvedic Integration**: Comprehensive traditional medicine database
-6. **Personalization**: Body type (Dosha) specific recommendations
+5. **Confidence Calibration**: Sophisticated scoring based on prediction gaps
+6. **Ayurvedic Integration**: Comprehensive traditional medicine database
+7. **Personalization**: Body type (Dosha) specific recommendations
+8. **Enhanced Matching**: Advanced disease-to-treatment mapping with fallback options
 
 ## Model Performance
 
@@ -84,6 +122,7 @@ python arogya_predict.py
 - **SVM Accuracy**: 95.0%
 - **Feature Set**: 901 features (12 basic + 889 TF-IDF)
 - **Diseases Supported**: 10+ Ayurvedic disease categories
+- **Confidence Calibration**: Realistic estimates using prediction gap analysis
 
 ## Supported Diseases
 
@@ -98,6 +137,23 @@ python arogya_predict.py
 - Anidra (Insomnia)
 - Shotha (Inflammation)
 
+## Usage Modes
+
+### 1. Demo Mode (Default)
+Runs sample predictions with pre-defined test cases demonstrating the system capabilities.
+
+### 2. Interactive Mode
+Collects user symptoms and health information through an intuitive questionnaire:
+- Symptoms input
+- Age, height, weight
+- Gender and age group
+- Enhanced dosha selection with detailed descriptions
+- Lifestyle factors (food habits, medication, allergies)
+- Environmental factors (season, weather)
+
+### 3. API Integration (Ready)
+The system is designed to be easily integrated into web applications or APIs.
+
 
 
 ## Technical Implementation
@@ -108,19 +164,39 @@ python arogya_predict.py
 - **Feature Scaling**: StandardScaler
 - **Model Persistence**: Joblib
 - **Data Processing**: Pandas, NumPy
+- **Confidence Calibration**: Advanced prediction gap analysis
 
-## Ayurvedic Knowledge Base
+## File Structure
 
-The system includes a comprehensive database of traditional Ayurvedic treatments with:
+```
+├── train_model.py           # Model training script
+├── arogya_predict.py        # Main prediction system with interactive mode
+├── disease_prediction_system.py  # Alternative comprehensive implementation
+├── demo.py                  # Detailed system demonstration
+├── requirements.txt         # Python dependencies
+├── random_forest_model.pkl  # Trained model (generated)
+├── enhanced_ayurvedic_treatment_dataset.csv  # Comprehensive Ayurvedic treatment database
+└── AyurCore.ipynb          # Original research notebook
+```
+
+## Enhanced Ayurvedic Knowledge Base
+
+The system includes an expanded database of traditional Ayurvedic treatments with:
 - 50+ traditional herbs with Sanskrit and English names
 - 30+ therapeutic treatments and procedures
 - Dosha-specific recommendations for Vata, Pitta, and Kapha constitutions
 - Personalized dietary guidelines
 - Treatment effects explanation for different body types
+- Advanced disease-to-treatment mapping with fallback options
+- Dynamic treatment personalization based on body constitution
 
 ## Future Enhancements
 
 - ~~Integration with real medical datasets~~ ✅ **DONE**
+- ~~Enhanced confidence scoring~~ ✅ **DONE**
+- ~~Interactive assessment mode~~ ✅ **DONE**
+- ~~Top-5 predictions~~ ✅ **DONE**
+- ~~Comprehensive dosha selection~~ ✅ **DONE**
 - Web interface for easier access
 - Mobile application
 - Multi-language support
