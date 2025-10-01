@@ -126,16 +126,128 @@ Instead of just one prediction, the system provides a ranked list of the 5 most 
 
 ## Supported Diseases
 
-- Jwara (Fever)
-- Kasa (Cough) 
-- Shwasa (Asthma)
-- Prameha (Diabetes)
-- Hridroga (Heart Disease)
-- Sandhivata (Arthritis)
-- Amlapitta (Gastritis)
-- Shiroroga (Headache)
-- Anidra (Insomnia)
-- Shotha (Inflammation)
+The system supports diagnosis and Ayurvedic treatment recommendations for **399+ diseases** across multiple medical categories:
+
+### Infectious Diseases
+- Common Cold
+- Influenza (Flu)
+- Pneumonia
+- Tuberculosis
+- Dengue
+- Malaria
+- Chikungunya
+- Chicken Pox
+- Measles
+- Mumps
+- Typhoid
+- Hepatitis A, B, C
+- HIV/AIDS
+- Urinary Tract Infection
+- Skin Infection
+- Fungal Infection
+- Cholera
+- Diarrhoea
+
+### Metabolic & Endocrine Disorders
+- Diabetes
+- Hypertension
+- Thyroid Disorders (Hyper/Hypothyroidism)
+- Obesity
+- PCOS (Polycystic Ovary Syndrome)
+- Anemia
+
+### Respiratory Conditions
+- Asthma
+- Bronchitis
+- Sinusitis
+- Cough
+- Fever
+
+### Cardiovascular Diseases
+- Heart Disease
+- Stroke
+
+### Digestive System Disorders
+- Gastritis
+- Gastroenteritis
+- Constipation
+- Appendicitis
+- Peptic Ulcer
+- Jaundice
+- Cirrhosis
+- Fatty Liver
+- Gallstones
+- Kidney Stones
+
+### Neurological & Mental Health
+- Migraine
+- Headache
+- Depression
+- Anxiety
+- Insomnia
+- Epilepsy
+- Alzheimer Disease
+- Parkinson Disease
+- Meningitis
+- Encephalitis
+
+### Musculoskeletal Disorders
+- Arthritis
+- Cervical Spondylosis
+- Disc Prolapse
+- Rheumatoid Arthritis
+- Gout
+- Osteoporosis
+- Paralysis
+
+### Skin & Hair Conditions
+- Acne
+- Allergy
+- Eczema
+- Psoriasis
+- Dandruff
+- Hair Loss
+- Vitiligo
+
+### Eye, Ear & Dental Issues
+- Conjunctivitis
+- Glaucoma
+- Cataract
+- Hearing Loss
+- Tinnitus
+- Vertigo
+- Toothache
+- Gum Disease
+- Mouth Ulcer
+
+### Reproductive & Urogenital Health
+- Erectile Dysfunction
+- Infertility
+- Menstrual Disorders
+- Endometriosis
+- Menopause
+- Prostate Enlargement
+- Overactive Bladder
+- Urinary Incontinence
+
+### Cancer Types
+- Breast Cancer
+- Various other cancer types
+
+### Other Conditions
+- Cancer (various types)
+- Sleep Apnea
+- Chronic Fatigue Syndrome
+- Fibromyalgia
+- Autoimmune Disorders
+- Lupus
+- Multiple Sclerosis
+- Carpal Tunnel Syndrome
+- Tennis Elbow
+- Plantar Fasciitis
+- Chronic Pain Syndromes
+
+*The complete system supports 399+ diseases in total, with comprehensive Ayurvedic treatment recommendations for each condition.*
 
 ## Usage Modes
 
