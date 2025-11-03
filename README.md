@@ -1,6 +1,6 @@
 # Arogya AI - Disease Prediction System with Ayurvedic Recommendations
 
-## Overview
+## Overview AI
 
 Arogya AI is a comprehensive disease prediction system that combines modern machine learning with traditional Ayurvedic medicine. It provides both accurate disease diagnosis and personalized Ayurvedic treatment recommendations.
 
