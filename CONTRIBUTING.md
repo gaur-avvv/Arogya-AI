@@ -1,8 +1,3 @@
 How You Can Contribute To This Project:
-
-## Follow This Template 
-1. Heading
-2. Feature/Enhancement or Issue/Bug
-3. Description
-4. Explanation
+Fork This Repo And Then add the change to the forked repo using pull request and then pull and merge don't forget to add description of the commit 
 
