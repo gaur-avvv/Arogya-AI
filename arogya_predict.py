@@ -1,690 +1,260 @@
-#!/usr/bin/env python3
-"""
-Arogya AI - Main Prediction System
-==================================
-
-This script loads the trained model and provides disease prediction
-along with comprehensive Ayurvedic recommendations as specified.
-
-Features:
-- Disease prediction using Random Forest model (>99% accuracy)
-- Comprehensive Ayurvedic recommendations including:
-  - Ayurvedic_Herbs_Sanskrit
-  - Ayurvedic_Herbs_English
-  - Herbs_Effects
-  - Ayurvedic_Therapies_Sanskrit
-  - Ayurvedic_Therapies_English
-  - Therapies_Effects
-  - Dietary_Recommendations
-  - How_Treatment_Affects_Your_Body_Type
-"""
-
 import joblib
 import pandas as pd
 import numpy as np
+from dotenv import load_dotenv
 import os
-import warnings
-from typing import Dict, Any
+import google.generativeai as genai
 
-warnings.filterwarnings('ignore')
+# --- Step 1: Configuration ---
+# Load environment variables from .env file
+load_dotenv()
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-class ArogyaAI:
-    """Main Arogya AI Prediction System"""
+# Configure the Gemini API client
+genai.configure(api_key=GEMINI_API_KEY)
+
+# --- Step 2: Load the Trained ML Model ---
+# Load the pre-trained Random Forest model and its components
+try:
+    model_path = "random_forest_model.pkl"
+    model_components = joblib.load(model_path)
+    model = model_components['model']
+    scaler = model_components['scaler']
+    vectorizer = model_components['vectorizer']
+    encoders = model_components['encoders']
+    # The feature columns used during training
+    training_feature_columns = model_components['feature_columns']
+    print("✅ ML Model loaded successfully.")
+except FileNotFoundError:
+    print(f"❌ Error: Model file not found at '{model_path}'.")
+    print("Please run 'python train_model.py' to train and save the model first.")
+    exit()
+except KeyError:
+    print(f"❌ Error: The model file '{model_path}' is missing required components like 'feature_columns'.")
+    print("Please re-run 'python train_model.py' to ensure the model is saved correctly.")
+    exit()
+
+
+def preprocess_input(user_data):
+    """
+    Preprocesses raw user input into a format the ML model can understand.
+    """
+    # Create a DataFrame from the user data
+    user_df = pd.DataFrame([user_data])
+
+    # Calculate BMI if not provided
+    if 'BMI' not in user_df.columns:
+        user_df['BMI'] = user_df['Weight_kg'] / (user_df['Height_cm'] / 100) ** 2
+
+    # Encode categorical features using the loaded encoders
+    categorical_columns = ['Age_Group', 'Gender', 'Body_Type_Dosha_Sanskrit', 
+                           'Food_Habits', 'Current_Medication', 'Allergies', 'Season', 'Weather']
     
-    def __init__(self, model_path='random_forest_model.pkl'):
-        """Initialize the prediction system"""
-        self.model_path = model_path
-        self.model_components = None
-        self.ayurvedic_database = None
-        self.load_model()
-        self.create_ayurvedic_database()
+    for col in categorical_columns:
+        # Use a default value (0) if a category is new or unseen
+        encoded_values = []
+        for item in user_df[col]:
+            try:
+                # The encoder expects a list or array
+                encoded_values.append(encoders[col].transform([item])[0])
+            except ValueError:
+                # Handle unseen labels by assigning a default value, e.g., 0
+                encoded_values.append(0) 
+        user_df[f'{col}_encoded'] = encoded_values
+
+    # Vectorize symptoms using the loaded TF-IDF vectorizer
+    tfidf_features = vectorizer.transform(user_df['Symptoms']).toarray()
     
-    def load_model(self):
-        """Load the trained model and all components"""
-        if not os.path.exists(self.model_path):
-            print(f"Model file {self.model_path} not found!")
-            print("Please run 'python train_model.py' first to train the model.")
-            return False
-        
-        try:
-            self.model_components = joblib.load(self.model_path)
-            print(f"✅ Model loaded successfully from {self.model_path}")
-            print(f"   Model type: {self.model_components['model_type']}")
-            print(f"   Model accuracy: {self.model_components['results'][self.model_components['model_type']]:.4f}")
-            return True
-        except Exception as e:
-            print(f"Error loading model: {str(e)}")
-            return False
+    # **FIX**: Create TF-IDF column names that match the training process ('tfidf_0', 'tfidf_1', etc.)
+    tfidf_cols = [f'tfidf_{i}' for i in range(tfidf_features.shape[1])]
+    tfidf_df = pd.DataFrame(tfidf_features, columns=tfidf_cols)
+
+    # Combine all features
+    base_feature_df = user_df[training_feature_columns].reset_index(drop=True)
+    final_df = pd.concat([base_feature_df, tfidf_df], axis=1)
     
-    def create_ayurvedic_database(self):
-        """
-        Create comprehensive Ayurvedic recommendations database
-        Maps diseases to their corresponding Ayurvedic treatments
-        """
-        csv_path = os.path.join(os.getcwd(), 'enhanced_ayurvedic_treatment_dataset.csv')
+    # **FIX**: Ensure the final DataFrame columns exactly match what the scaler was fitted on.
+    # This handles any discrepancy in the number of TF-IDF features.
+    # Get the feature names from the scaler object itself
+    scaler_feature_names = scaler.get_feature_names_out()
+    final_df = final_df.reindex(columns=scaler_feature_names, fill_value=0)
 
-        def _clean_text(val: str) -> str:
-            if pd.isna(val):
-                return ''
-            s = str(val).strip()
-            # split on pipes to separate multi-part effects and join later
-            return s.replace('_', ' ').replace(' ,', ',').replace('  ', ' ').strip()
+    # Scale the features using the loaded scaler
+    scaled_features = scaler.transform(final_df)
+    return scaled_features
 
-        def _aggregate(series: pd.Series) -> str:
-            if series is None or series.empty:
-                return ''
-            parts: list[str] = []
-            for raw in series.dropna().astype(str):
-                # split by '|' to preserve multiple effect phrases
-                split_items = [p.strip() for p in str(raw).split('|') if p and p.strip().lower() != 'nan']
-                for item in split_items:
-                    cleaned = _clean_text(item)
-                    if cleaned and cleaned not in parts:
-                        parts.append(cleaned)
-            return '; '.join(parts)
+def get_llm_validation_and_explanation(user_data, ml_prediction, confidence):
+    """
+    Uses the Gemini LLM to validate the ML prediction and provide a detailed,
+    personalized Ayurvedic explanation.
+    """
+    # --- Step 3: Craft a Detailed Prompt for the LLM ---
+    # This prompt guides the LLM to perform the validation and explanation task.
+    prompt = f"""
+    You are an expert Ayurvedic health assistant. Your task is to analyze a user's health data and an initial model prediction, then provide a final, trustworthy, and personalized Ayurvedic diagnosis and plan.
 
-        columns_to_keep = [
-            'Ayurvedic_Herbs_Sanskrit',
-            'Ayurvedic_Herbs_English',
-            'Herbs_Effects',
-            'Ayurvedic_Therapies_Sanskrit',
-            'Ayurvedic_Therapies_English',
-            'Therapies_Effects',
-            'Dietary_Recommendations',
-            'How_Treatment_Affects_Your_Body_Type',
-        ]
+    **User's Health Profile:**
+    - **Symptoms:** {user_data['Symptoms']}
+    - **Age:** {user_data['Age']}
+    - **Gender:** {user_data['Gender']}
+    - **Body Type (Dosha):** {user_data['Body_Type_Dosha_Sanskrit']}
+    - **Food Habits:** {user_data['Food_Habits']}
+    - **Season:** {user_data['Season']}
+    - **Weather:** {user_data['Weather']}
+    - **Height:** {user_data['Height_cm']} cm
+    - **Weight:** {user_data['Weight_kg']} kg
 
-        # Default minimal fallback in case CSV read fails
-        default_reco = {
-            'Ayurvedic_Herbs_Sanskrit': 'Amalaki, Haridra, Tulasi',
-            'Ayurvedic_Herbs_English': 'Amla, Turmeric, Holy Basil',
-            'Herbs_Effects': 'General immunity boost; Anti-inflammatory; Antioxidant',
-            'Ayurvedic_Therapies_Sanskrit': 'Abhyanga, Pranayama, Yoga',
-            'Ayurvedic_Therapies_English': 'Oil massage, Breathing exercises, Yoga',
-            'Therapies_Effects': 'General wellness; Stress reduction; Improved circulation',
-            'Dietary_Recommendations': 'Balanced diet; Fresh foods; Adequate water; Regular meals',
-            'How_Treatment_Affects_Your_Body_Type': 'General balancing of doshas; Promotes overall health',
-        }
+    **Initial Analysis (Internal Use Only):**
+    - **Predicted Condition:** {ml_prediction}
+    - **Initial Confidence:** {confidence:.2f}
 
-        if not os.path.exists(csv_path):
-            print(f"⚠️ Ayurvedic CSV not found at {csv_path}. Using minimal fallback recommendations.")
-            self.ayurvedic_database = {}
-            return
+    **Your Instructions:**
 
-        try:
-            df = pd.read_csv(csv_path)
-            if 'Disease' not in df.columns:
-                raise ValueError("CSV missing required 'Disease' column")
+    1.  **Analyze and Diagnose:** You are an expert Ayurvedic health assistant and have extensive knowledge of Ayurvedic principles and practices. Based on the user's profile and your Ayurvedic knowledge, determine the final diagnosis. You can agree with the initial prediction or correct it with a brief reason.
 
-            # Normalize disease names
-            df['Disease'] = df['Disease'].astype(str).str.strip()
+    2.  **Generate Response:** Structure your entire response *exactly* like the example below. Use the same headings, emojis, and simple, clean formatting. Do not use asterisks or markdown bolding. Keep explanations concise and easy to read and don't use technical jargon.
 
-            # Build mapping by aggregating all rows per disease
-            ayur_map: Dict[str, Dict[str, str]] = {}
-            grouped = df.groupby('Disease', sort=True)
-            for disease, g in grouped:
-                entry: Dict[str, str] = {}
-                for col in columns_to_keep:
-                    if col in g.columns:
-                        entry[col] = _aggregate(g[col])
-                    else:
-                        entry[col] = ''
+    **--- RESPONSE TEMPLATE ---**
 
-                # Ensure some sensible fallback text if fields are empty
-                for k, v in list(entry.items()):
-                    if not v:
-                        entry[k] = default_reco.get(k, '')
+    💖 Your Ayurvedic Diagnosis
 
-                ayur_map[disease] = entry
+    Predicted Disease: [Your Final Diagnosis Here] [Confidence Level: in %]
 
-            self.ayurvedic_database = ayur_map
-            print(f"✅ Loaded Ayurvedic recommendations for {len(self.ayurvedic_database)} diseases from CSV")
+    Based on your profile, it seems you are experiencing [Your Final Diagnosis Here].
+    [Provide a brief, simple explanation of why, connecting symptoms, body type, and season. And how Ayurveda views this condition.]
 
-        except Exception as e:
-            print(f"⚠️ Failed to load Ayurvedic recommendations from CSV: {e}")
-            self.ayurvedic_database = {}
-    
-    # -----------------------------
-    # Display helpers (compact view)
-    # -----------------------------
-    def _compact_listlike(self, text: str, max_items: int = 6) -> str:
-        """Turn a long aggregated list (with ';' and ',') into unique, concise comma list."""
-        if not text:
-            return ''
-        items: list[str] = []
-        # split on semicolons first, then commas
-        for seg in str(text).split(';'):
-            for token in seg.split(','):
-                t = token.strip()
-                if not t or t.lower() == 'nan':
-                    continue
-                if t not in items:
-                    items.append(t)
-        return ', '.join(items[:max_items])
+    🌿 Your Personalized Ayurvedic Plan
 
-    def _compact_phrases(self, text: str, max_items: int = 4) -> str:
-        """Keep unique phrases separated by ';' and cap the count."""
-        if not text:
-            return ''
-        phrases: list[str] = []
-        for seg in str(text).split(';'):
-            t = seg.strip()
-            if not t or t.lower() == 'nan':
-                continue
-            if t not in phrases:
-                phrases.append(t)
-        return '; '.join(phrases[:max_items])
+    🩺 Condition Explained
+    [Explain the condition in simple Ayurvedic terms. Keep it short and relatable and understandable.]
 
-    def format_for_display(self, result: Dict[str, Any]) -> Dict[str, Any]:
-        """Return a shallow copy of result with compact, readable fields for printing."""
-        d = dict(result)
-        # List-like fields (herbs and therapies names)
-        for key in [
-            'Ayurvedic_Herbs_Sanskrit',
-            'Ayurvedic_Herbs_English',
-            'Ayurvedic_Therapies_Sanskrit',
-            'Ayurvedic_Therapies_English',
-        ]:
-            d[key] = self._compact_listlike(d.get(key, ''), max_items=6)
+    Ayurvedic Medicinal Herbs
+    - [List 3-4 specific Ayurvedic herbs or formulations known to help with the condition.]
+    - [Example: Ashwagandha, Turmeric, Triphala]
 
-        # Phrase-like fields (effects, diet)
-        for key, cap in [
-            ('Herbs_Effects', 4),
-            ('Therapies_Effects', 4),
-            ('Dietary_Recommendations', 4),
-        ]:
-            d[key] = self._compact_phrases(d.get(key, ''), max_items=cap)
+    🥗 Dietary Recommendations
+    Focus on foods that help you feel better.
+    (Search online from trusted sources and websites including books, articles, pdf, text, data, json, everywhere for common Ayurvedic recommendations for the diagnosed disease)
 
-        # Keep personalized effects as-is
-        return d
-    
-    def preprocess_user_input(self, user_data: Dict[str, Any]) -> np.ndarray:
-        """Preprocess user input for prediction"""
-        if not self.model_components:
-            raise ValueError("Model not loaded. Please load model first.")
-        
-        # Convert to DataFrame
-        user_df = pd.DataFrame([user_data])
-        
-        # Calculate BMI if not provided
-        if 'BMI' not in user_df.columns and 'Height_cm' in user_df.columns and 'Weight_kg' in user_df.columns:
-            user_df['BMI'] = user_df['Weight_kg'] / (user_df['Height_cm'] / 100) ** 2
-        
-        # Encode categorical features
-        categorical_columns = ['Age_Group', 'Gender', 'Body_Type_Dosha_Sanskrit', 
-                              'Food_Habits', 'Current_Medication', 'Allergies', 'Season', 'Weather']
-        
-        for col in categorical_columns:
-            if col in user_df.columns and col in self.model_components['encoders']:
-                try:
-                    user_df[f'{col}_encoded'] = self.model_components['encoders'][col].transform(user_df[col])
-                except ValueError:
-                    # Handle unknown categories
-                    user_df[f'{col}_encoded'] = 0
-        
-        # Select numerical and encoded features
-        other_features = user_df[self.model_components['feature_columns']]
-        
-        # Transform symptoms using TF-IDF
-        if 'Symptoms' in user_data:
-            tfidf_matrix = self.model_components['vectorizer'].transform([user_data['Symptoms']])
-            tfidf_features = pd.DataFrame(
-                tfidf_matrix.toarray(), 
-                columns=[f'tfidf_{i}' for i in range(tfidf_matrix.shape[1])]
-            )
-            # Combine features
-            combined_features = pd.concat([other_features.reset_index(drop=True), 
-                                         tfidf_features.reset_index(drop=True)], axis=1)
-        else:
-            combined_features = other_features
-        
-        # Scale features
-        combined_features_scaled = self.model_components['scaler'].transform(combined_features)
-        
-        return combined_features_scaled
-    
-    def predict_disease_with_recommendations(self, user_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Main prediction function - returns disease prediction with Ayurvedic recommendations
-        """
-        if not self.model_components:
-            raise ValueError("Model not loaded!")
-        
-        # Preprocess input
-        processed_features = self.preprocess_user_input(user_data)
-        
-        # Make prediction
-        model = self.model_components['model']
-        prediction = model.predict(processed_features)
-        prediction_proba = model.predict_proba(processed_features)
-        
-        # Get disease name
-        predicted_disease = self.model_components['encoders']['Disease'].inverse_transform(prediction)[0]
-        
-        # Apply confidence score calibration to avoid overconfident predictions
-        # The raw confidence from the model needs to be adjusted to be more realistic
-        raw_confidence = np.max(prediction_proba)
-        
-        # Calculate confidence with additional calibration based on the difference 
-        # between the top prediction and the second best prediction
-        proba_vec = prediction_proba[0]
-        sorted_probs = np.sort(proba_vec)[::-1]  # Sort in descending order
-        
-        if len(sorted_probs) > 1:
-            top_prob = sorted_probs[0]
-            second_prob = sorted_probs[1]
-            # Create more realistic confidence based on the gap between best and second best
-            confidence_gap = top_prob - second_prob
-            
-            # Use a more nuanced approach: balance between the raw probability and the gap
-            # If the gap is large and the top probability is high, we can have higher confidence
-            # If the gap is small, keep confidence more conservative
-            if confidence_gap > 0.3:  # Large gap - higher confidence possible
-                calibrated_confidence = min(0.98, max(0.05, top_prob * 0.8 + confidence_gap * 0.5))
-            elif confidence_gap > 0.15:  # Medium gap - moderate confidence
-                calibrated_confidence = min(0.95, max(0.05, top_prob * 0.7 + confidence_gap * 0.3))
-            else:  # Small gap - low confidence
-                calibrated_confidence = min(0.85, max(0.02, top_prob * 0.6 + confidence_gap * 0.4))
-        else:
-            calibrated_confidence = raw_confidence
-        
-        # Ensure confidence is realistic (not exactly 1.0 or 0.0)
-        confidence = max(0.01, min(0.99, calibrated_confidence))
+    Eat This:
+    - [List 5-6 specific food items or types]
+    - [Example: Warm soups and well-cooked vegetables]
 
-        # Compute Top-5 predictions
-        idx_sorted = np.argsort(proba_vec)[::-1]
-        topk_idx = idx_sorted[:5]
-        class_indices = model.classes_
-        encoder = self.model_components['encoders']['Disease']
-        topk_names = encoder.inverse_transform(class_indices[topk_idx])
-        
-        # Apply similar calibration to all top predictions
-        top5 = []
-        for name, i in zip(topk_names, topk_idx):
-            raw_score = float(proba_vec[i])
-            # Apply minimal calibration to other predictions as well
-            calibrated_score = max(0.001, min(0.999, raw_score))
-            top5.append({
-                'Disease': str(name),
-                'Confidence': calibrated_score
-            })
-        
-        # Get Ayurvedic recommendations
-        body_type = user_data.get('Body_Type_Dosha_Sanskrit', 'Unknown')
+    Avoid This:
+    - [List 3-4 specific food items or types to avoid]
+    - [Example: Cold drinks and heavy, oily foods]
 
-        ayurvedic_recommendations = None
-        if isinstance(self.ayurvedic_database, dict) and self.ayurvedic_database:
-            # 1) Exact match
-            if predicted_disease in self.ayurvedic_database:
-                ayurvedic_recommendations = self.ayurvedic_database[predicted_disease].copy()
-            else:
-                # 2) Normalize disease names for better matching
-                # Remove extra parentheses, standardize common variations
-                normalized_pred_disease = predicted_disease.lower().strip()
-                
-                # Handle common variations in disease naming
-                if "(vertigo)" in normalized_pred_disease and "positional" in normalized_pred_disease:
-                    possible_matches = [k for k in self.ayurvedic_database.keys() 
-                                      if "vertigo" in k.lower() and "positional" in k.lower()]
-                    if possible_matches:
-                        ayurvedic_recommendations = self.ayurvedic_database[possible_matches[0]].copy()
-                elif "common cold" in normalized_pred_disease or "cold" == normalized_pred_disease:
-                    # Look for common cold in database
-                    cold_keys = [k for k in self.ayurvedic_database.keys() 
-                                if "cold" in k.lower() and "common" in k.lower()]
-                    if cold_keys:
-                        ayurvedic_recommendations = self.ayurvedic_database[cold_keys[0]].copy()
-                    else:
-                        # Fallback to just "Cold" or "Common Cold"
-                        fallback_keys = [k for k in self.ayurvedic_database.keys() 
-                                        if "common" in k.lower() and "cold" in k.lower()]
-                        if fallback_keys:
-                            ayurvedic_recommendations = self.ayurvedic_database[fallback_keys[0]].copy()
-                else:
-                    # 3) Case-insensitive match
-                    keys_lower = {k.lower(): k for k in self.ayurvedic_database.keys()}
-                    key_ci = keys_lower.get(normalized_pred_disease)
-                    if key_ci:
-                        ayurvedic_recommendations = self.ayurvedic_database[key_ci].copy()
-                    else:
-                        # 4) Partial match
-                        cand = None
-                        pred_lower = normalized_pred_disease
-                        for k in self.ayurvedic_database.keys():
-                            if pred_lower in k.lower() or k.lower() in pred_lower:
-                                cand = k
-                                break
-                        if cand:
-                            ayurvedic_recommendations = self.ayurvedic_database[cand].copy()
+    🏃 Lifestyle Advice
+    - [Provide 2-3 simple, actionable lifestyle tips.]
+    - [Example: Ensure you get plenty of rest and keep warm.]
 
-        if ayurvedic_recommendations is None:
-            # Default recommendations if mapping unavailable
-            ayurvedic_recommendations = {
-                'Ayurvedic_Herbs_Sanskrit': 'Amalaki, Haridra, Tulasi',
-                'Ayurvedic_Herbs_English': 'Amla, Turmeric, Holy Basil',
-                'Herbs_Effects': 'General immunity boost; Anti-inflammatory; Antioxidant',
-                'Ayurvedic_Therapies_Sanskrit': 'Abhyanga, Pranayama, Yoga',
-                'Ayurvedic_Therapies_English': 'Oil massage, Breathing exercises, Yoga',
-                'Therapies_Effects': 'General wellness; Stress reduction; Improved circulation',
-                'Dietary_Recommendations': 'Balanced diet; Fresh foods; Adequate water; Regular meals',
-                'How_Treatment_Affects_Your_Body_Type': 'General balancing of doshas; Promotes overall health'
-            }
-        
-        # Personalize for body type
-        if body_type != "Unknown":
-            ayurvedic_recommendations['How_Treatment_Affects_Your_Body_Type'] += f" (Specifically beneficial for {body_type} constitution)"
-        
-        # Compile results
-        result = {
-            'Predicted_Disease': predicted_disease,
-            'Confidence': float(confidence),
-            'User_Symptoms': user_data.get('Symptoms', ''),
-            'User_Body_Type': body_type,
-            'Top_5_Predictions': top5,
-            **ayurvedic_recommendations
-        }
-        
-        return result
-    
-    def get_dosha_selection(self):
-        """Enhanced dosha selection with clear body type descriptions"""
-        
-        print("\n🌿 AYURVEDIC BODY TYPE ASSESSMENT 🌿")
-        print("=" * 50)
-        print("Select your body type based on physical characteristics:\n")
-        
-        dosha_options = {
-            '1': {
-                'name': 'Vata',
-                'constitution': 'Air_Space_Constitution',
-                'body_type': 'Thin/Lean',
-                'description': 'Naturally thin build, difficulty gaining weight, dry skin, cold hands/feet'
-            },
-            '2': {
-                'name': 'Pitta',
-                'constitution': 'Fire_Water_Constitution', 
-                'body_type': 'Medium',
-                'description': 'Medium build, good muscle tone, warm body, strong appetite'
-            },
-            '3': {
-                'name': 'Kapha',
-                'constitution': 'Earth_Water_Constitution',
-                'body_type': 'Heavy/Large',
-                'description': 'Naturally larger build, gains weight easily, cool moist skin, steady energy'
-            },
-            '4': {
-                'name': 'Vata-Pitta',
-                'constitution': 'Air_Fire_Mixed_Constitution',
-                'body_type': 'Thin to Medium',
-                'description': 'Variable build, creative energy, moderate body temperature'
-            },
-            '5': {
-                'name': 'Vata-Kapha',
-                'constitution': 'Air_Earth_Mixed_Constitution',
-                'body_type': 'Thin to Heavy',
-                'description': 'Variable patterns, irregular tendencies, sensitive to changes'
-            },
-            '6': {
-                'name': 'Pitta-Kapha',
-                'constitution': 'Fire_Earth_Mixed_Constitution',
-                'body_type': 'Medium to Heavy',
-                'description': 'Strong stable build, good strength, balanced metabolism'
-            }
-        }
-        
-        # Display options
-        for key, value in dosha_options.items():
-            print(f"{key}. {value['name']} - {value['body_type']}")
-            print(f"   {value['description']}")
-            print()
-        
-        print("You can enter:")
-        print("• Number (1-6)")  
-        print("• Dosha name (e.g., 'Vata', 'Pitta-Kapha')")
-        print("• Body type (e.g., 'thin', 'medium', 'heavy')")
-        
-        while True:
-            dosha_choice = input("\nEnter your selection: ").strip()
-            
-            # Check if it's a number
-            if dosha_choice in dosha_options:
-                selected = dosha_options[dosha_choice]
-                return selected['name'], selected['constitution']
-            
-            # Check if it's a dosha name (case insensitive)
-            dosha_choice_lower = dosha_choice.lower()
-            for option in dosha_options.values():
-                if option['name'].lower() == dosha_choice_lower:
-                    return option['name'], option['constitution']
-            
-            # Check if it's a body type description
-            body_type_mapping = {
-                'thin': '1', 'lean': '1', 'skinny': '1',
-                'medium': '2', 'average': '2', 'moderate': '2',
-                'heavy': '3', 'large': '3', 'big': '3', 'fat': '3',
-                'thin to medium': '4', 'variable thin': '4',
-                'thin to heavy': '5', 'irregular': '5',
-                'medium to heavy': '6', 'strong': '6'
-            }
-            
-            if dosha_choice_lower in body_type_mapping:
-                selected_key = body_type_mapping[dosha_choice_lower]
-                selected = dosha_options[selected_key]
-                return selected['name'], selected['constitution']
-            
-            print("❌ Invalid selection. Please try again.")
-            print("Use numbers 1-6, dosha names, or body type descriptions.")
+    🌿 Home Remedies & Precautions
+    - [List 2-3 simple and safe home remedies.]
+    - [Example: Sip on warm ginger tea throughout the day.]
 
-    def get_user_input_interactive(self) -> Dict[str, Any]:
-        """Interactive input collection"""
-        print("\n" + "="*60)
-        print("AROGYA AI - INTERACTIVE HEALTH ASSESSMENT")
-        print("="*60)
-        print("Please provide the following information for accurate prediction:\n")
-        
-        user_data = {}
-        
-        # Basic Information
-        user_data['Symptoms'] = input("Enter your symptoms (comma-separated): ")
-        user_data['Age'] = int(input("Enter your age: "))
-        user_data['Height_cm'] = float(input("Enter your height in cm: "))
-        user_data['Weight_kg'] = float(input("Enter your weight in kg: "))
-        
-        # Auto-determine age group
-        age = user_data['Age']
-        if age <= 12:
-            age_group = "Child"
-        elif age <= 19:
-            age_group = "Adolescent"
-        elif age <= 35:
-            age_group = "Young Adult"
-        elif age <= 50:
-            age_group = "Middle Age"
-        elif age <= 65:
-            age_group = "Senior"
-        else:
-            age_group = "Elderly"
-        
-        user_data['Age_Group'] = age_group
-        
-        print(f"\nGender options: Male, Female")
-        user_data['Gender'] = input("Enter your gender: ")
-        
-        # Use enhanced dosha selection
-        dosha_name, dosha_constitution = self.get_dosha_selection()
-        user_data['Body_Type_Dosha_Sanskrit'] = dosha_name
-        print(f"\n✅ Selected: {dosha_name} ({dosha_constitution})")
-        
-        print(f"\nFood Habits options: Vegetarian, Non-Vegetarian, Vegan, Mixed")
-        user_data['Food_Habits'] = input("Enter your food habits: ") or "Mixed"
-        
-        user_data['Current_Medication'] = input("Enter current medications (or 'None'): ") or "None"
-        user_data['Allergies'] = input("Enter known allergies (or 'None'): ") or "None"
-        
-        print(f"\nSeason options: Spring, Summer, Monsoon, Autumn, Winter")
-        user_data['Season'] = input("Enter current season: ") or "Summer"
-        
-        print(f"\nWeather options: Hot, Cold, Humid, Dry, Rainy")
-        user_data['Weather'] = input("Enter current weather: ") or "Hot"
-        
-        return user_data
+    Important Note: If your symptoms worsen or (related to diagnosis details), please consult a medical doctor. This plan is for gentle support.
+    **--- END OF TEMPLATE ---**
+    """
 
-def demo_sample_prediction():
-    """Demonstrate with sample data"""
-    print("\n" + "="*70)
-    print("AROGYA AI - DISEASE PREDICTION WITH AYURVEDIC RECOMMENDATIONS")
-    print("="*70)
-    
-    # Initialize system
-    ai_system = ArogyaAI()
-    
-    if not ai_system.model_components:
-        print("❌ Model not available. Please run 'python train_model.py' first.")
-        return
-    
-    # Sample predictions
-    sample_cases = [
-        {
-            'name': 'Case 1: Fever symptoms',
-            'data': {
-                'Symptoms': 'fever, body ache, headache, fatigue',
-                'Age': 35,
-                'Height_cm': 170,
-                'Weight_kg': 75,
-                'Gender': 'Female',
-                'Age_Group': 'Young Adult',
-                'Body_Type_Dosha_Sanskrit': 'Pitta',
-                'Food_Habits': 'Vegetarian',
-                'Current_Medication': 'None',
-                'Allergies': 'None',
-                'Season': 'Summer',
-                'Weather': 'Hot'
-            }
-        },
-        {
-            'name': 'Case 2: Respiratory symptoms',
-            'data': {
-                'Symptoms': 'cough, breathing difficulty, chest tightness',
-                'Age': 45,
-                'Height_cm': 175,
-                'Weight_kg': 80,
-                'Gender': 'Male',
-                'Age_Group': 'Middle Age',
-                'Body_Type_Dosha_Sanskrit': 'Kapha',
-                'Food_Habits': 'Non-Vegetarian',
-                'Current_Medication': 'None',
-                'Allergies': 'None',
-                'Season': 'Winter',
-                'Weather': 'Cold'
-            }
-        }
-    ]
-    
-    for case in sample_cases:
-        print(f"\n{'='*50}")
-        print(f"🔍 {case['name']}")
-        print(f"{'='*50}")
-        
-        try:
-            result = ai_system.predict_disease_with_recommendations(case['data'])
-            display = ai_system.format_for_display(result)
-            
-            print(f"\n📋 PREDICTION RESULTS:")
-            print(f"   Predicted Disease: {display['Predicted_Disease']}")
-            print(f"   Confidence: {display['Confidence']:.2%}")
-            if 'Top_5_Predictions' in result:
-                print("   Top 5 candidates:")
-                for i, item in enumerate(result['Top_5_Predictions'], start=1):
-                    print(f"     {i}. {item['Disease']} ({item['Confidence']:.2%})")
-            print(f"   Symptoms: {display['User_Symptoms']}")
-            print(f"   Body Type: {display['User_Body_Type']}")
-            
-            print(f"\n🌿 AYURVEDIC RECOMMENDATIONS:")
-            print(f"   Sanskrit Herbs: {display['Ayurvedic_Herbs_Sanskrit']}")
-            print(f"   English Herbs: {display['Ayurvedic_Herbs_English']}")
-            print(f"   Herb Effects: {display['Herbs_Effects']}")
-            print(f"   Sanskrit Therapies: {display['Ayurvedic_Therapies_Sanskrit']}")
-            print(f"   English Therapies: {display['Ayurvedic_Therapies_English']}")
-            print(f"   Therapy Effects: {display['Therapies_Effects']}")
-            
-            print(f"\n🍽️ DIETARY RECOMMENDATIONS:")
-            print(f"   {display['Dietary_Recommendations']}")
-            
-            print(f"\n👤 PERSONALIZED TREATMENT EFFECTS:")
-            print(f"   {display['How_Treatment_Affects_Your_Body_Type']}")
-            
-        except Exception as e:
-            print(f"❌ Error in prediction: {str(e)}")
-
-def interactive_mode():
-    """Run interactive prediction mode"""
-    ai_system = ArogyaAI()
-    
-    if not ai_system.model_components:
-        print("❌ Model not available. Please run 'python train_model.py' first.")
-        return
-    
-    user_input = ai_system.get_user_input_interactive()
-    
-    print(f"\n{'='*60}")
-    print("🔍 YOUR PREDICTION RESULTS")
-    print(f"{'='*60}")
-    
+    # --- Step 4: Query the Gemini Model ---
     try:
-        result = ai_system.predict_disease_with_recommendations(user_input)
-        display = ai_system.format_for_display(result)
-        
-        print(f"\n📋 MEDICAL PREDICTION:")
-        print(f"   Disease: {display['Predicted_Disease']}")
-        print(f"   Confidence: {display['Confidence']:.2%}")
-        if 'Top_5_Predictions' in result:
-            print("   Top 5 candidates:")
-            for i, item in enumerate(result['Top_5_Predictions'], start=1):
-                print(f"     {i}. {item['Disease']} ({item['Confidence']:.2%})")
-        
-        print(f"\n🌿 AYURVEDIC TREATMENT PLAN:")
-        print(f"   Sanskrit Herbs: {display['Ayurvedic_Herbs_Sanskrit']}")
-        print(f"   English Herbs: {display['Ayurvedic_Herbs_English']}")
-        print(f"   Herb Benefits: {display['Herbs_Effects']}")
-        
-        print(f"\n💆 THERAPEUTIC TREATMENTS:")
-        print(f"   Sanskrit Therapies: {display['Ayurvedic_Therapies_Sanskrit']}")
-        print(f"   English Therapies: {display['Ayurvedic_Therapies_English']}")
-        print(f"   Treatment Benefits: {display['Therapies_Effects']}")
-        
-        print(f"\n🥗 DIETARY GUIDANCE:")
-        print(f"   {display['Dietary_Recommendations']}")
-        
-        print(f"\n🎯 PERSONALIZED TREATMENT EFFECTS:")
-        print(f"   {display['How_Treatment_Affects_Your_Body_Type']}")
-        
-        # Save results
-        print(f"\n💾 Results saved for your reference.")
-        
+        gemini_model = genai.GenerativeModel('gemini-2.5-flash')
+        response = gemini_model.generate_content(prompt)
+        return response.text
     except Exception as e:
-        print(f"❌ Error in prediction: {str(e)}")
+        return f"Error communicating with the LLM: {e}"
+
+def main():
+    """
+    Main function to run the prediction workflow.
+    """
+    print("="*60)
+    print("AROGYA AI - Integrated ML + LLM Prediction System")
+    print("="*60)
+    print("Please provide your details to receive a personalized analysis.")
+    print("-" * 60)
+
+
+    # --- User Input Section ---
+    # Get user input with more user-friendly prompts
+    symptoms = input("Enter your symptoms (comma-separated): ")
+    age = int(input("Enter your age: "))
+    height_cm = int(input("Enter your height (cm): "))
+    weight_kg = int(input("Enter your weight (kg): "))
+    gender = input("Enter your gender: ")
+    
+    # Ask for body type in simple English
+    body_type_english = input("Enter your general body type (e.g., Thin, Medium, Heavy): ").strip().lower()
+    
+    # Map English input to Sanskrit Dosha terms
+    dosha_map = {
+        "thin": "Vata",
+        "medium": "Pitta",
+        "heavy": "Kapha"
+    }
+    # Default to 'Vata' if the input is not recognized
+    body_type_sanskrit = dosha_map.get(body_type_english, "Vata")
+
+    food_habits = input("Enter your food habits (e.g., Vegetarian, Non-Vegetarian, Mixed): ")
+    current_medication = input("Enter your current medication (if any, otherwise type 'None'): ")
+    allergies = input("Enter any allergies (if any, otherwise type 'None'): ")
+    season = input("Enter the current season (e.g., Summer, Monsoon, Winter): ")
+    weather = input("Enter the current weather (e.g., Hot, Humid, Cold): ")
+
+    # Automatically determine Age_Group from age
+    if age <= 12:
+        age_group = "Child"
+    elif 13 <= age <= 19:
+        age_group = "Adolescent"
+    elif 20 <= age <= 39:
+        age_group = "Young Adult"
+    elif 40 <= age <= 59:
+        age_group = "Middle-Aged Adult"
+    else:
+        age_group = "Senior"
+
+    # Assemble the user_data dictionary for processing
+    user_data = {
+        "Symptoms": symptoms,
+        "Age": age,
+        "Height_cm": height_cm,
+        "Weight_kg": weight_kg,
+        "Gender": gender,
+        "Age_Group": age_group,
+        "Body_Type_Dosha_Sanskrit": body_type_sanskrit,
+        "Food_Habits": food_habits,
+        "Current_Medication": current_medication,
+        "Allergies": allergies,
+        "Season": season,
+        "Weather": weather
+    }
+
+    # --- ML Model Prediction (Internal) ---
+    print("\nAnalyzing your information...")
+    try:
+        # Preprocess the user's input data
+        features = preprocess_input(user_data)
+
+        # Get prediction and confidence score from the ML model
+        prediction = model.predict(features)
+        prediction_proba = model.predict_proba(features)
+        predicted_disease = encoders['Disease'].inverse_transform(prediction)[0]
+        confidence = np.max(prediction_proba)
+
+        print(f"   => ML Model Prediction: '{predicted_disease}' (Confidence: {confidence:.2%})")
+
+    except Exception as e:
+        print(f"   => Error during analysis: {e}")
+        return
+
+    # --- LLM Validation and Explanation ---
+    llm_explanation = get_llm_validation_and_explanation(user_data, predicted_disease, confidence)
+    
+    print("\n" + "="*60)
+    print("🌿 Arogya AI - Personalized Ayurvedic Analysis 🌿")
+    print("="*60)
+    print(llm_explanation)
+
 
 if __name__ == "__main__":
-    print("Initializing Arogya AI...")
-    
-    # Check if model exists
-    if not os.path.exists('random_forest_model.pkl'):
-        print("\n❌ Trained model not found!")
-        print("📋 Please run the following command first:")
-        print("   python train_model.py")
-        print("\nThis will train the model and save it for predictions.")
-    else:
-        # Run demo
-        demo_sample_prediction()
-        
-        # Ask for interactive mode
-        print(f"\n{'='*70}")
-        interactive = input("Would you like to try interactive prediction? (y/n): ").lower().strip()
-        
-        if interactive == 'y':
-            interactive_mode()
-    
-    print(f"\n{'='*70}")
-    print("Thank you for using Arogya AI!")
-    print("Stay healthy with the wisdom of Ayurveda! 🌿")
-    print(f"{'='*70}")
+    main()
