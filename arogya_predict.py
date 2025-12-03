@@ -121,12 +121,12 @@ def get_llm_validation_and_explanation(user_data, ml_prediction, confidence):
     Predicted Disease: [Your Final Diagnosis Here] [Confidence Level: in %]
 
     Based on your profile, it seems you are experiencing [Your Final Diagnosis Here].
-    [Provide a brief, simple explanation of why, connecting symptoms, body type, and season. And how Ayurveda views this condition.]
+    [Provide a brief, simple explanation of why, connecting symptoms, body type, current weather and season. And how Ayurveda views this condition along with ayurveda terms use english also in ().]
 
     🌿 Your Personalized Ayurvedic Plan
 
     🩺 Condition Explained
-    [Explain the condition in simple Ayurvedic terms. Keep it short and relatable and understandable.]
+    [Explain the condition in simple Ayurvedic terms with English understandable terms in (). Keep it short and relatable and understandable.]
 
     Ayurvedic Medicinal Herbs
     - [List 3-4 specific Ayurvedic herbs or formulations known to help with the condition.]
@@ -134,7 +134,7 @@ def get_llm_validation_and_explanation(user_data, ml_prediction, confidence):
 
     🥗 Dietary Recommendations
     Focus on foods that help you feel better.
-    (Search online from trusted sources and websites including books, articles, pdf, text, data, json, everywhere for common Ayurvedic recommendations for the diagnosed disease)
+    (Search online from trusted, verified and official sources and websites including books, articles, pdf, text, data, json, everywhere for common Ayurvedic recommendations for the diagnosed disease)
 
     Eat This:
     - [List 5-6 specific food items or types]
@@ -145,14 +145,14 @@ def get_llm_validation_and_explanation(user_data, ml_prediction, confidence):
     - [Example: Cold drinks and heavy, oily foods]
 
     🏃 Lifestyle Advice
-    - [Provide 2-3 simple, actionable lifestyle tips.]
+    - [Provide 3-4 simple, actionable lifestyle tips.]
     - [Example: Ensure you get plenty of rest and keep warm.]
 
     🌿 Home Remedies & Precautions
-    - [List 2-3 simple and safe home remedies.]
+    - [List 3-4 simple and safe home remedies.]
     - [Example: Sip on warm ginger tea throughout the day.]
 
-    Important Note: If your symptoms worsen or (related to diagnosis details), please consult a medical doctor. This plan is for gentle support.
+    ⚠️ Important Note: If your symptoms worsen or (related to diagnosis details), please consult a medical doctor. This plan is for gentle support.
     **--- END OF TEMPLATE ---**
     """
 
