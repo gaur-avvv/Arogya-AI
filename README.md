@@ -1,4 +1,4 @@
-# Arogya AI - Disease Prediction System with Ayurvedic Recommendations
+# 🌿 Arogya AI – Disease Prediction System with Ayurvedic Intelligence
 
 ## Overview
 
@@ -6,17 +6,17 @@ Arogya AI is a comprehensive disease prediction system that combines modern mach
 
 ## Key Features
 
-✅ **High-Accuracy Disease Prediction**: 100% accuracy using Random Forest ML model  
-✅ **TF-IDF Symptom Analysis**: Processes 807 symptom features using natural language processing  
-✅ **SMOTE Class Balancing**: Handles imbalanced datasets for better prediction accuracy  
-✅ **Comprehensive Ayurvedic Recommendations**: Complete treatment plans including herbs, therapies, and dietary advice  
-✅ **Personalized Body Type (Dosha) Recommendations**: Customized treatments based on individual constitution  
-✅ **Interactive Assessment Mode**: User-friendly symptom and health data collection  
-✅ **Integrated ML + LLM System**: Combines machine learning predictions with LLM-powered Ayurvedic analysis  
-✅ **Offline Fallback Mode**: Works completely offline when LLM/internet is unavailable  
-✅ **Contextual Diagnosis**: Considers all symptoms, lifestyle, and environmental factors for accurate diagnosis  
-✅ **Detailed Treatment Plans**: Includes herbs, dietary recommendations, lifestyle advice, and home remedies  
-✅ **Privacy-First Design**: Option to run entirely offline with local Ayurvedic database
+ **High-Accuracy Disease Prediction**: 100% accuracy using Random Forest ML model  
+ **TF-IDF Symptom Analysis**: Processes 807 symptom features using natural language processing  
+ **SMOTE Class Balancing**: Handles imbalanced datasets for better prediction accuracy  
+ **Comprehensive Ayurvedic Recommendations**: Complete treatment plans including herbs, therapies, and dietary advice  
+ **Personalized Body Type (Dosha) Recommendations**: Customized treatments based on individual constitution  
+ **Interactive Assessment Mode**: User-friendly symptom and health data collection  
+ **Integrated ML + LLM System**: Combines machine learning predictions with LLM-powered Ayurvedic analysis  
+ **Offline Fallback Mode**: Works completely offline when LLM/internet is unavailable  
+ **Contextual Diagnosis**: Considers all symptoms, lifestyle, and environmental factors for accurate diagnosis  
+ **Detailed Treatment Plans**: Includes herbs, dietary recommendations, lifestyle advice, and home remedies  
+ **Privacy-First Design**: Option to run entirely offline with local Ayurvedic database
 
 ## What You Get from Predictions
 
