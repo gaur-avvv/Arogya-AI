@@ -267,6 +267,16 @@ class ArogyaAIPredictor:
         
         return result
         
+    def get_safe_number_input(self, prompt, converter=int):
+        """
+        Safely gets numeric input from the user, handling ValueErrors.
+        """
+        while True:
+            try:
+                return converter(input(prompt))
+            except ValueError:
+                print(f"❌ Invalid input. Please enter a valid {'number' if converter == float else 'integer'}.")
+
     def get_user_input_interactive(self) -> Dict[str, Any]:
         """
         Interactive function to collect user input
@@ -281,9 +291,9 @@ class ArogyaAIPredictor:
         
         # Basic Information
         user_data['Symptoms'] = input("Enter your symptoms (comma-separated, e.g., fever, headache, nausea): ")
-        user_data['Age'] = int(input("Enter your age: "))
-        user_data['Height_cm'] = float(input("Enter your height in cm: "))
-        user_data['Weight_kg'] = float(input("Enter your weight in kg: "))
+        user_data['Age'] = self.get_safe_number_input("Enter your age: ")
+        user_data['Height_cm'] = self.get_safe_number_input("Enter your height in cm: ", float)
+        user_data['Weight_kg'] = self.get_safe_number_input("Enter your weight in kg: ", float)
         
         # Gender
         print("\nGender options: Male, Female")

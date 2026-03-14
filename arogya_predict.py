@@ -164,6 +164,16 @@ def get_llm_validation_and_explanation(user_data, ml_prediction, confidence):
     except Exception as e:
         return f"Error communicating with the LLM: {e}"
 
+def get_safe_number_input(prompt, converter=int):
+    """
+    Safely gets numeric input from the user, handling ValueErrors.
+    """
+    while True:
+        try:
+            return converter(input(prompt))
+        except ValueError:
+            print(f"❌ Invalid input. Please enter a valid {'number' if converter == float else 'integer'}.")
+
 def main():
     """
     Main function to run the prediction workflow.
@@ -178,9 +188,9 @@ def main():
     # --- User Input Section ---
     # Get user input with more user-friendly prompts
     symptoms = input("Enter your symptoms (comma-separated): ")
-    age = int(input("Enter your age: "))
-    height_cm = int(input("Enter your height (cm): "))
-    weight_kg = int(input("Enter your weight (kg): "))
+    age = get_safe_number_input("Enter your age: ")
+    height_cm = get_safe_number_input("Enter your height (cm): ")
+    weight_kg = get_safe_number_input("Enter your weight (kg): ")
     gender = input("Enter your gender: ")
     
     # Ask for body type in simple English
