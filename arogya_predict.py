@@ -51,16 +51,12 @@ def preprocess_input(user_data):
                            'Food_Habits', 'Current_Medication', 'Allergies', 'Season', 'Weather']
     
     for col in categorical_columns:
-        # Use a default value (0) if a category is new or unseen
-        encoded_values = []
-        for item in user_df[col]:
-            try:
-                # The encoder expects a list or array
-                encoded_values.append(encoders[col].transform([item])[0])
-            except ValueError:
-                # Handle unseen labels by assigning a default value, e.g., 0
-                encoded_values.append(0) 
-        user_df[f'{col}_encoded'] = encoded_values
+        # Vectorized categorical encoding: handle unseen labels by defaulting to 0
+        encoder = encoders[col]
+        user_df[f'{col}_encoded'] = 0  # Initialize with default value
+        mask = user_df[col].isin(encoder.classes_)
+        if mask.any():
+            user_df.loc[mask, f'{col}_encoded'] = encoder.transform(user_df.loc[mask, col])
 
     # Vectorize symptoms using the loaded TF-IDF vectorizer
     tfidf_features = vectorizer.transform(user_df['Symptoms']).toarray()
