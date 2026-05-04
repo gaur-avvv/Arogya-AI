@@ -36,7 +36,7 @@ jobs:
           # Basic syntax check for Python files
           python -m py_compile arogya_predict.py
           python -m py_compile disease_prediction_system.py
-          python -m py_compile api/index.py
+          python -m py_compile backend/index.py
           
   frontend-build:
     name: Frontend Build

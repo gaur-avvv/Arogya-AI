@@ -43,6 +43,20 @@ def preprocess_input(user_data):
     # Create a DataFrame from the user data
     user_df = pd.DataFrame([user_data])
 
+    # Categorize Age into Age_Group if missing
+    if 'Age_Group' not in user_df.columns and 'Age' in user_df.columns:
+        age_val = user_df['Age'].iloc[0]
+        if age_val < 13:
+            user_df['Age_Group'] = "Child"
+        elif 13 <= age_val < 20:
+            user_df['Age_Group'] = "Adolescent"
+        elif 20 <= age_val < 60:
+            user_df['Age_Group'] = "Adult"
+        else:
+            user_df['Age_Group'] = "Senior"
+    elif 'Age_Group' not in user_df.columns:
+        user_df['Age_Group'] = "Adult"
+
     # Calculate BMI if not provided
     if 'BMI' not in user_df.columns:
         user_df['BMI'] = user_df['Weight_kg'] / (user_df['Height_cm'] / 100) ** 2
