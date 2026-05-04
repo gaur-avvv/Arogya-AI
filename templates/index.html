@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Arogya-AI | Professional</title>
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <script src="[https://unpkg.com/lucide@latest](https://unpkg.com/lucide@latest)"></script>
+    <style>
+      .step-section {
+        display: none;
+      }
+      .step-active {
+        display: block;
+        animation: fadeIn 0.5s ease-out forwards;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .spin-slow {
+        animation: spin 3s linear infinite;
+      }
+    </style>
+  </head>
+  <body
+    class="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-emerald-100"
+  >
+    <nav
+      class="bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-50"
+    >
+      <div class="flex items-center gap-2">
+        <div class="bg-emerald-600 p-2 rounded-lg shadow-lg shadow-emerald-200">
+          <i data-lucide="leaf" class="text-white w-6 h-6"></i>
+        </div>
+        <span class="text-2xl font-bold tracking-tight text-emerald-900"
+          >Arogya<span class="text-emerald-600">AI</span></span
+        >
+      </div>
+      <div class="flex gap-4 items-center">
+        <span
+          class="hidden md:flex items-center gap-1 text-sm font-medium text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100"
+        >
+          <i data-lucide="activity" class="w-4 h-4 animate-pulse"></i> System
+          Online: RF Active
+        </span>
+      </div>
+    </nav>
+
+    <main class="max-w-5xl mx-auto py-12 px-6">
+      <div
+        id="step-1"
+        class="step-section step-active max-w-2xl mx-auto space-y-8"
+      >
+        <div class="text-center space-y-4">
+          <h1 class="text-4xl font-black text-slate-900 tracking-tight">
+            Health Analysis
+          </h1>
+          <p class="text-slate-500">
+            Provide your details to begin the diagnostic process.
+          </p>
+        </div>
+
+        <div
+          class="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100 p-8 md:p-12"
+        >
+          <div class="space-y-6">
+            <div class="space-y-2">
+              <label
+                class="text-sm font-bold text-slate-700 flex items-center gap-2"
+              >
+                <i data-lucide="wind" class="text-emerald-600 w-4 h-4"></i>
+                Known Dosha (Prakriti)
+              </label>
+              <select
+                id="dosha"
+                class="w-full p-4 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 focus:bg-white"
+              >
+                <option>Vata (Air/Space)</option>
+                <option>Pitta (Fire/Water)</option>
+                <option>Kapha (Earth/Water)</option>
+                <option>Unknown</option>
+              </select>
+            </div>
+
+            <div class="space-y-2">
+              <label
+                class="text-sm font-bold text-slate-700 flex items-center gap-2"
+              >
+                <i
+                  data-lucide="thermometer"
+                  class="text-emerald-600 w-4 h-4"
+                ></i>
+                Current Season
+              </label>
+              <select
+                id="season"
+                class="w-full p-4 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 focus:bg-white"
+              >
+                <option>Summer</option>
+                <option>Monsoon</option>
+                <option>Winter</option>
+                <option>Spring</option>
+              </select>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-sm font-bold text-slate-700"
+                >Describe your symptoms in detail</label
+              >
+              <textarea
+                id="symptoms"
+                class="w-full p-5 h-40 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 focus:bg-white resize-none"
+                placeholder="e.g. Severe joint pain, slight fever, and chills..."
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="mt-12 flex justify-end">
+            <button
+              onclick="runAnalysis()"
+              class="bg-emerald-900 text-white px-10 py-4 rounded-2xl font-bold flex items-center gap-2 hover:bg-black transition-all shadow-xl active:scale-95"
+            >
+              Run Diagnostic <i data-lucide="sparkles" class="w-5 h-5"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div
+        id="loading-screen"
+        class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xl flex items-center justify-center z-[100] p-6"
+      >
+        <div
+          class="bg-white p-10 rounded-[2.5rem] shadow-2xl max-w-md w-full text-center space-y-8"
+        >
+          <div class="relative w-24 h-24 mx-auto">
+            <div
+              class="absolute inset-0 border-b-4 border-emerald-600 rounded-full spin-slow"
+            ></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+              <i
+                data-lucide="brain-circuit"
+                class="text-emerald-600 w-10 h-10"
+              ></i>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <h3 class="text-2xl font-bold text-slate-900">
+              Dual-Engine Analysis
+            </h3>
+            <p class="text-slate-500 text-sm font-medium">
+              Predicting Pattern (RF) & Contextualizing (LLM)...
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div id="step-result" class="step-section space-y-8">
+        <div class="flex justify-between items-end gap-4">
+          <div>
+            <button
+              onclick="resetApp()"
+              class="text-emerald-600 font-bold text-sm mb-2 hover:underline flex items-center gap-1"
+            >
+              ← New Analysis
+            </button>
+            <h2 class="text-4xl font-bold tracking-tight text-slate-900">
+              Diagnostic Report
+            </h2>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div class="lg:col-span-1 space-y-6">
+            <div
+              class="bg-emerald-900 text-white p-8 rounded-3xl shadow-2xl shadow-emerald-900/20 relative overflow-hidden"
+            >
+              <div class="absolute -right-4 -top-4 opacity-10">
+                <i data-lucide="activity" class="w-32 h-32"></i>
+              </div>
+              <p
+                class="text-emerald-300 text-xs font-black uppercase tracking-widest mb-3"
+              >
+                Engine 1: ML Prediction
+              </p>
+              <h3 id="res-disease" class="text-3xl font-bold mb-2">
+                Analyzing...
+              </h3>
+              <p class="text-xs text-emerald-200/60 mt-6 italic">
+                Random Forest Classifier Match
+              </p>
+            </div>
+          </div>
+
+          <div class="lg:col-span-2 space-y-6">
+            <div
+              class="bg-white p-8 md:p-12 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden"
+            >
+              <div class="absolute top-0 right-0 p-8 opacity-5">
+                <i data-lucide="sparkles" class="w-32 h-32"></i>
+              </div>
+
+              <h4
+                class="font-bold text-slate-800 mb-6 flex items-center gap-2 text-xl"
+              >
+                <i data-lucide="brain-circuit" class="text-emerald-600"></i>
+                Contextual Reasoning
+              </h4>
+              <p
+                id="res-reasoning"
+                class="text-slate-700 leading-relaxed text-lg mb-10"
+              ></p>
+
+              <div
+                class="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent mb-10"
+              ></div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div class="space-y-4">
+                  <h5
+                    class="font-bold text-emerald-800 flex items-center gap-2 text-lg"
+                  >
+                    <i data-lucide="leaf"></i> Recommended Herbs
+                  </h5>
+                  <ul id="res-herbs" class="space-y-4"></ul>
+                </div>
+                <div class="space-y-4">
+                  <h5
+                    class="font-bold text-emerald-800 flex items-center gap-2 text-lg"
+                  >
+                    <i data-lucide="clipboard-check"></i> Lifestyle Advice
+                  </h5>
+                  <ul id="res-lifestyle" class="space-y-4"></ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      // Initialize Lucide Icons
+      lucide.createIcons();
+
+      function resetApp() {
+        document.getElementById("step-result").classList.remove("step-active");
+        document.getElementById("step-1").classList.add("step-active");
+        document.getElementById("symptoms").value = "";
+      }
+
+      async function runAnalysis() {
+        const symptoms = document.getElementById("symptoms").value;
+        if (symptoms.trim().length < 5)
+          return alert("Please enter your symptoms.");
+
+        const dosha = document.getElementById("dosha").value;
+        const season = document.getElementById("season").value;
+
+        // Show loading screen
+        document.getElementById("step-1").classList.remove("step-active");
+        document.getElementById("loading-screen").classList.remove("hidden");
+
+        try {
+          // Call the Flask Backend!
+          const response = await fetch("/diagnose", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ symptoms, dosha, season }),
+          });
+
+          const result = await response.json();
+
+          // Hide loading, show results
+          document.getElementById("loading-screen").classList.add("hidden");
+          document.getElementById("step-result").classList.add("step-active");
+
+          // Populate UI with JSON data
+          document.getElementById("res-disease").innerText =
+            result.ml_raw_prediction;
+          document.getElementById("res-reasoning").innerText =
+            result.llm_data.reasoning;
+
+          // Populate Herbs list
+          const herbsList = document.getElementById("res-herbs");
+          herbsList.innerHTML = "";
+          result.llm_data.herbs.forEach((herb) => {
+            herbsList.innerHTML += `
+                        <li class="flex gap-3 items-start">
+                            <div class="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                            <div>
+                                <strong class="text-slate-900 block">${herb.name}</strong>
+                                <span class="text-sm text-slate-500">${herb.benefit}</span>
+                            </div>
+                        </li>`;
+          });
+
+          // Populate Lifestyle list
+          const lifeList = document.getElementById("res-lifestyle");
+          lifeList.innerHTML = "";
+          result.llm_data.lifestyle.forEach((tip) => {
+            lifeList.innerHTML += `
+                        <li class="flex gap-3 items-start">
+                            <div class="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                            <span class="text-slate-600 text-sm leading-relaxed">${tip}</span>
+                        </li>`;
+          });
+        } catch (error) {
+          alert("Server error. Ensure app.py is running!");
+          console.error(error);
+          document.getElementById("loading-screen").classList.add("hidden");
+          document.getElementById("step-1").classList.add("step-active");
+        }
+      }
+    </script>
+  </body>
+</html>

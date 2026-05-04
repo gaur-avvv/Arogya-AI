@@ -1,152 +1,112 @@
-# 🌿 Arogya AI – Disease Prediction System with Ayurvedic Intelligence
+# 🌿 ArogyaAI: Hybrid Intelligence for Ayurvedic Clinical Support
 
-## Overview
+![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
+![Firebase](https://img.shields.io/badge/firebase-%23039BE5.svg?style=for-the-badge&logo=firebase)
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
+![Vercel](https://img.shields.io/badge/vercel-%23000000.svg?style=for-the-badge&logo=vercel&logoColor=white)
 
-Arogya AI is a comprehensive disease prediction system that combines modern machine learning with traditional Ayurvedic medicine. It provides both accurate disease diagnosis and personalized Ayurvedic treatment recommendations.
+ArogyaAI is a modern, cloud-connected Clinical Decision Support System (CDSS) designed to bridge the gap between traditional Ayurvedic medicine and modern Artificial Intelligence. 
 
-## Key Features
+By utilizing a **Dual-Engine AI Architecture** (Deterministic Machine Learning + Generative AI) and strict **Role-Based Access Control (RBAC)**, ArogyaAI provides a secure, end-to-end ecosystem for both patients and medical practitioners. This project is configured as a full-stack monorepo with automated CI/CD and serverless deployments on Vercel.
 
- **High-Accuracy Disease Prediction**: 100% accuracy using Random Forest ML model  
- **TF-IDF Symptom Analysis**: Processes 807 symptom features using natural language processing  
- **SMOTE Class Balancing**: Handles imbalanced datasets for better prediction accuracy  
- **Comprehensive Ayurvedic Recommendations**: Complete treatment plans including herbs, therapies, and dietary advice  
- **Personalized Body Type (Dosha) Recommendations**: Customized treatments based on individual constitution  
- **Interactive Assessment Mode**: User-friendly symptom and health data collection  
- **Integrated ML + LLM System**: Combines machine learning predictions with LLM-powered Ayurvedic analysis  
- **Offline Fallback Mode**: Works completely offline when LLM/internet is unavailable  
- **Contextual Diagnosis**: Considers all symptoms, lifestyle, and environmental factors for accurate diagnosis  
- **Detailed Treatment Plans**: Includes herbs, dietary recommendations, lifestyle advice, and home remedies  
- **Privacy-First Design**: Option to run entirely offline with local Ayurvedic database
+---
 
-## What You Get from Predictions
+## 🎯 The Problem & Solution
+Traditional Ayurvedic diagnostics rely heavily on practitioner intuition, while modern medical AI models act as "black boxes" that ignore holistic factors like Doshas (Prakriti) and seasonality. Furthermore, exposing raw, low-confidence ML predictions directly to patients poses a severe ethical and psychological risk.
 
-Each prediction provides all the requested fields:
+**ArogyaAI solves this by:**
+1. Combining mathematical Random Forest predictions with Generative LLM contextual reasoning.
+2. Utilizing Explainable AI (XAI) so doctors can see *why* the AI made its decision.
+3. Implementing strict Clinical Safety Guardrails that mask low-confidence predictions to prevent patient panic.
 
-- **Ayurvedic_Herbs_Sanskrit**: Traditional Sanskrit names of recommended herbs
-- **Ayurvedic_Herbs_English**: English names and descriptions of herbs
-- **Herbs_Effects**: Detailed benefits and effects of recommended herbs
-- **Ayurvedic_Therapies_Sanskrit**: Traditional Sanskrit therapy names
-- **Ayurvedic_Therapies_English**: Modern descriptions of therapeutic treatments
-- **Therapies_Effects**: How therapies work and their benefits
-- **Dietary_Recommendations**: Personalized dietary guidance
-- **How_Treatment_Affects_Your_Body_Type**: Detailed explanation of how treatments specifically benefit your Ayurvedic constitution
+---
 
-## Quick Start
+## ✨ Key Features
 
-### 1. Install Dependencies
+### 🔐 Role-Based Architecture (Multi-Tenant)
+* **Practitioner Portal:** Doctors have a comprehensive dashboard to run AI diagnostics, view clinic-wide metrics, and manage patient records.
+* **Patient Portal:** Patients have a soothing, non-intimidating dashboard to log daily symptoms (Health Diaries) and view safe, actionable Ayurvedic protocols prescribed by their doctor.
+* **Clinic ID Siloing:** Data is strictly isolated. Patients link their accounts to a specific doctor using a unique 6-character `Clinic ID`, ensuring secure, HIPAA-compliant-style data routing.
+
+### 🧠 Dual-Engine AI System
+* **Engine 1 (Deterministic):** A Python API backend running a trained Random Forest model (Scikit-Learn). It analyzes symptom strings via TF-IDF vectorization and outputs a disease probability and confidence score.
+* **Engine 2 (Generative):** Google Gemini 2.5 LLM analyzes the patient's Dosha, age, gender, and the ML prediction to generate a holistic, personalized Ayurvedic protocol (Herbs & Lifestyle).
+
+### 🛡️ Clinical Safety Guardrails & Ethics
+* **Explainable AI (XAI):** Doctors are provided with an "AI X-Ray" showing the weight of each symptom that led to the ML prediction.
+* **Confidence Thresholding:** If the AI confidence falls below 35%, the system automatically flags the result as "Inconclusive Data" and warns the doctor, preventing misdiagnosis from vague inputs.
+* **Patient View Filtering:** Raw, Western disease labels are masked on the Patient Dashboard. Instead, patients see comforting, actionable advice.
+
+---
+
+## 🛠️ System Architecture & Tech Stack
+
+**Frontend:**
+* React.js (Vite)
+* Tailwind CSS (Styling)
+* Framer Motion (Fluid Animations)
+* Lucide React (Iconography)
+
+**Backend & Cloud:**
+* FastAPI (Serverless API layer on Vercel)
+* Google Firebase Authentication (Email/Password & Single Sign-On via Google)
+* Google Firestore (NoSQL Database for Users, Patient Records, and Diaries)
+* GitHub Actions (CI/CD Automated Linting & Build pipelines)
+
+**Artificial Intelligence:**
+* Scikit-Learn (Random Forest Classifier + SMOTE)
+* Google Gemini 2.5 Pro API (Generative LLM)
+
+---
+
+## ⚙️ How to Deploy & Run Locally
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/yourusername/arogya-ai.git
+cd arogya-ai
+```
+
+### 2. Start the Backend API (FastAPI)
+Ensure you have Python installed, then navigate to the root directory:
+
 ```bash
 pip install -r requirements.txt
+uvicorn api.index:app --reload
 ```
+The FastAPI server will start running on `http://127.0.0.1:8000`. Test the endpoint at `/api/health`.
 
-### 2. Train the Model (if needed)
+### 3. Start the React Frontend
+Open a new terminal window, navigate to the frontend directory:
+
 ```bash
-python train_model.py
+cd frontend
+npm install
+npm run dev
 ```
-This creates `random_forest_model.pkl` with all necessary components.
+The React app will start running on `http://localhost:5173`. Proxies are mapped so your frontend gracefully calls the backend on `localhost:8000/api`.
 
-### 3. Run the Model
-```bash
-python arogya_predict.py
-```
+### 4. Deployment (Vercel)
+This project is configured with a `vercel.json` file for automatic deployment. 
+1. Link the repository to your Vercel account.
+2. Vercel will automatically build the Vite SSR app and deploy `api/index.py` as a serverless function. 
+3. Ensure `.env` settings (`GEMINI_API_KEY`, etc.) are configured in Vercel's Environment Variables.
 
-### 4. Interactive Mode
-For personalized assessment, run the script and choose interactive mode when prompted:
-```bash
-python arogya_predict.py
-```
+---
 
+## 🚀 Future Roadmap (What's Next?)
+ArogyaAI is built to scale. Future iterations of this platform will focus on continuous learning and broader accessibility:
 
-## Enhanced Features
+1. **Continuous AI Learning (Feedback Loop):** Allow doctors to "Accept" or "Correct" the AI's diagnosis.
+2. **Wearable IoT Integration:** Connect with smartwatches (Apple Watch / Fitbit APIs) to automatically pull real-time vitals.
+3. **Multilingual Support for Rural Access:** Integrate translation APIs so patients in rural India can log symptoms in regional languages.
+4. **Telemedicine & Appointment Booking:** Add a scheduling system where doctors can trigger video calls.
 
-### 🌿 Comprehensive Dosha Selection
-The system now includes a detailed Ayurvedic body type assessment with 6 constitution types:
-- **Vata** (Air_Space_Constitution) - Thin/Lean: Naturally thin build, difficulty gaining weight, dry skin, cold hands/feet
-- **Pitta** (Fire_Water_Constitution) - Medium: Medium build, good muscle tone, warm body, strong appetite  
-- **Kapha** (Earth_Water_Constitution) - Heavy/Large: Naturally larger build, gains weight easily, cool moist skin, steady energy
-- **Vata-Pitta** (Air_Fire_Mixed_Constitution) - Thin to Medium: Variable build, creative energy, moderate body temperature
-- **Vata-Kapha** (Air_Earth_Mixed_Constitution) - Thin to Heavy: Variable patterns, irregular tendencies, sensitive to changes
-- **Pitta-Kapha** (Fire_Earth_Mixed_Constitution) - Medium to Heavy: Strong stable build, good strength, balanced metabolism
+---
 
-### 📊 Calibrated Confidence Scoring
-The system now uses sophisticated confidence calibration that considers the gap between the top prediction and second-best prediction to provide more realistic confidence estimates:
-- Large gap between predictions: Higher confidence possible (up to 98%)
-- Medium gap: Moderate confidence (up to 95%)
-- Small gap: Conservative confidence (up to 85%)
-
-### 🤖 Integrated ML + LLM Analysis
-The system combines machine learning predictions with advanced LLM-powered contextual analysis. The ML model provides an initial prediction, which the LLM then evaluates against all symptoms, lifestyle factors, and environmental conditions to provide a more accurate, contextualized diagnosis with comprehensive Ayurvedic treatment plans.
-
-## Sample Output
-
-```
-============================================================
-AROGYA AI - Integrated ML + LLM Prediction System
-============================================================
-Please provide your details to receive a personalized analysis.
-------------------------------------------------------------
-Enter your symptoms (comma-separated): joint pain, stiffness, swelling, difficulty walking, morning stiffness
-Enter your age: 52
-Enter your height (cm): 168
-Enter your weight (kg): 78
-Enter your gender: Female
-Enter your general body type (e.g., Thin, Medium, Heavy): Medium
-Enter your food habits (e.g., Vegetarian, Non-Vegetarian, Mixed): Vegetarian
-Enter your current medication (if any, otherwise type 'None'): None
-Enter any allergies (if any, otherwise type 'None'): None
-Enter the current season (e.g., Summer, Monsoon, Winter): Winter
-Enter the current weather (e.g., Hot, Humid, Cold): Cold
-
-Analyzing your information...
-   => ML Model Prediction: 'Arthritis' (Confidence: 96.50%)
-
-============================================================
-🌿 Arogya AI - Personalized Ayurvedic Analysis 🌿
-============================================================
-💖 Your Ayurvedic Diagnosis
-
-Predicted Disease: Arthritis (Sandhivata) [Confidence Level: 97%]
-
-Based on your profile and symptoms, you are experiencing Arthritis (Sandhivata in Ayurveda), 
-primarily caused by Vata dosha aggravation. The combination of joint pain, stiffness, swelling, 
-difficulty walking, and morning stiffness are classic symptoms of this condition, especially 
-prevalent during cold weather which naturally aggravates Vata.
-
-🌿 Your Personalized Ayurvedic Plan
-
-🩺 Condition Explained
-Sandhivata (Arthritis) occurs when Vata dosha accumulates in the joints (Sandhi), causing 
-pain, stiffness, and inflammation. The cold, dry qualities of Vata are particularly aggravated 
-during winter, leading to reduced flexibility and increased discomfort. Ama (toxins) may also 
-accumulate in the joints, further worsening the condition.
-
-Ayurvedic Medicinal Herbs
-- Sanskrit: Shallaki, Guggulu, Ashwagandha, Nirgundi
-- English: Boswellia, Indian Bdellium, Winter Cherry, Vitex
-- Effects: Anti-inflammatory, reduces joint pain, strengthens bones and tissues, improves 
-  mobility, reduces Vata aggravation
-
-💆 Ayurvedic Therapies
-- Sanskrit: Abhyanga, Pinda Sweda, Janu Basti, Swedana
-- English: Warm oil massage, Herbal bolus therapy, Knee pooling therapy, Steam therapy
-- Effects: Lubricates joints, reduces stiffness, improves circulation, removes toxins, 
-  alleviates pain, nourishes tissues
-
-🥗 Dietary Recommendations
-
-Eat This:
-- Warm, cooked, and easily digestible foods
-- Ghee, sesame oil, and healthy fats
-- Ginger, turmeric, and warming spices
-- Cooked vegetables like carrots, sweet potatoes, and squash
-- Warm milk with turmeric before bed
-- Moong dal and whole grains like rice and wheat
-
-Avoid This:
-- Cold, raw, and frozen foods
-- Excess sour, salty foods (can increase inflammation)
-- Refined sugars and processed foods
-- Nightshade vegetables (tomatoes, potatoes, eggplant) which may aggravate inflammation
-- Heavy, oily, and deep-fried foods
+*👨‍💻 Academic Integrity & Acknowledgements: This project was developed to demonstrate full-stack software engineering, ethical AI implementation, and modern cloud database architecture. ArogyaAI is a prototype Clinical Decision Support System. It is designed to assist, not replace, licensed medical professionals.*
 
 🏃 Lifestyle Advice
 - Practice gentle yoga and stretching exercises daily to maintain flexibility

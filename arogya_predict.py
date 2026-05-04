@@ -16,7 +16,8 @@ genai.configure(api_key=GEMINI_API_KEY)
 # --- Step 2: Load the Trained ML Model ---
 # Load the pre-trained Random Forest model and its components
 try:
-    model_path = "random_forest_model.pkl"
+    # Use absolute path to ensure Vercel finds it
+    model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "random_forest_model.pkl")
     model_components = joblib.load(model_path)
     model = model_components['model']
     scaler = model_components['scaler']

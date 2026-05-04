@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  /* Premium animated gradient background */
+  background: linear-gradient(-45deg, #f8fafc, #ecfdf5, #f0fdfa, #f8fafc);
+  background-size: 400% 400%;
+  animation: gradient 15s ease infinite;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Make sure the PDF looks perfectly formatted when downloading */
+@media print {
+  /* 1. Setup standard A4 Paper margins */
+  @page {
+    margin: 1.5cm;
+    size: A4 portrait;
+  }
+
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  /* 2. Strip away massive web height/padding that causes blank pages */
+  main,
+  .min-h-screen,
+  .pb-20,
+  .pt-10,
+  .pt-12 {
+    min-height: auto !important;
+    height: auto !important;
+    padding-bottom: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  /* 3. Force the Side-by-Side Grid to stack cleanly into a single column */
+  .grid {
+    display: block !important;
+    gap: 0 !important;
+  }
+
+  /* 4. Redesign the cards to be compact and NEVER break across pages */
+  .print-shadow-none {
+    box-shadow: none !important;
+    border: 2px solid #e2e8f0 !important;
+    background: white !important;
+    color: #0f172a !important; /* Dark slate text for readability */
+    padding: 24px !important;
+    margin-bottom: 24px !important;
+    border-radius: 16px !important; /* Slightly sharper corners for print */
+    page-break-inside: avoid !important; /* STOPS CARDS FROM CUTTING IN HALF */
+    break-inside: avoid !important;
+  }
+
+  /* 5. Keep list items (herbs/lifestyle) intact */
+  li {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* 6. Fix gradient text turning invisible or grey in PDFs */
+  .bg-clip-text {
+    background: none !important;
+    -webkit-text-fill-color: #059669 !important; /* Solid emerald green */
+    color: #059669 !important;
+  }
+}
