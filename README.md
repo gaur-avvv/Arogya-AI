@@ -88,11 +88,10 @@ npm run dev
 ```
 The React app will start running on `http://localhost:5173`. Proxies are mapped so your frontend gracefully calls the backend on `localhost:8000/api`.
 
-### 4. Deployment (Vercel)
-This project is configured with a `vercel.json` file for automatic deployment. 
-1. Link the repository to your Vercel account.
-2. Vercel will automatically build the Vite SSR app and deploy `api/index.py` as a serverless function. 
-3. Ensure `.env` settings (`GEMINI_API_KEY`, etc.) are configured in Vercel's Environment Variables.
+### 4. Deployment (Vercel & Render)
+Due to Vercel's 500MB serverless limit, this architecture is split for maximum free-tier performance:
+1. **Frontend (Vercel):** Connect your GitHub repo to Vercel. Vercel automatically detects Vite. Add an environment variable `VITE_API_URL` pointing to your Render backend URL.
+2. **Backend (Render):** Connect your repository to Render as a "Blueprint" using the included `render.yaml`. Add your `GEMINI_API_KEY` to the environment variables. Render will automatically spin up the Python FastAPI server.
 
 ---
 

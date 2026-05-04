@@ -64,6 +64,10 @@ def predict_disease(data: PredictRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to ArogyaAI API. Visit /docs for Swagger UI documentation.", "health_check": "/api/health"}
+
 @app.get("/api/health")
 def health_check():
     return {"status": "ArogyaAI Backend is healthy!"}

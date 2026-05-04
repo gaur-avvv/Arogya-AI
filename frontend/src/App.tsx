@@ -958,10 +958,27 @@ function DiagnosticTool({ userData }: { userData: UserData | null }) {
     setError(null);
     setSavedSuccess(false);
     try {
-      const response = await fetch("http://127.0.0.1:5000/diagnose", {
+      // Map formData to Backend API structure
+      const apiPayload = {
+        Symptoms: formData.symptoms,
+        Age: parseInt(formData.age),
+        Height_cm: parseInt(formData.height || "170"),
+        Weight_kg: parseInt(formData.weight || "70"),
+        Gender: formData.gender,
+        Body_Type_Dosha_Sanskrit: formData.dosha,
+        Season: formData.season,
+        Food_Habits: "Mixed", 
+        Current_Medication: "None",
+        Allergies: "None",
+        Weather: "Clear"
+      };
+
+      // Determine API URL based on environment
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_BASE_URL}/api/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(apiPayload),
       });
 
       if (!response.ok)
@@ -1493,69 +1510,77 @@ function DiagnosticTool({ userData }: { userData: UserData | null }) {
               {/* CONTEXTUAL REASONING CARD */}
               <div className="bg-white p-8 md:p-16 rounded-[3rem] border border-slate-200/60 shadow-sm print-shadow-none">
                 <h4 className="font-black text-slate-950 mb-8 md:mb-10 flex items-center gap-3 text-2xl md:text-3xl">
-                  <BrainCircuit className="text-emerald-600" /> Contextual
-                  Reasoning
+                  <BrainCircuit className="text-emerald-600" /> Ayurvedic AI Contextual Analysis
                 </h4>
-                <p className="text-slate-800 leading-relaxed text-lg md:text-xl font-semibold mb-12">
-                  {result.reasoning}
-                </p>
-                <div className="my-12 h-0.5 bg-slate-100" />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                  <div>
-                    <h5 className="font-black text-slate-950 flex gap-2 text-xl md:text-2xl mb-8">
-                      <Leaf className="text-emerald-500" /> Protocol Herbs
-                    </h5>
-                    <ul className="space-y-6">
-                      {result.herbs &&
-                        result.herbs.map((herb, idx) => (
-                          <li
-                            key={idx}
-                            className="flex gap-4 items-start bg-slate-50 p-5 rounded-2xl"
-                          >
-                            <div className="mt-1 bg-emerald-100 p-1.5 rounded-full flex-shrink-0">
-                              <CheckCircle2
-                                size={18}
-                                className="text-emerald-600"
-                              />
-                            </div>
-                            <div>
-                              <strong className="block text-slate-900 text-lg font-black">
-                                {herb.name}
-                              </strong>
-                              <span className="text-slate-600 text-sm font-bold">
-                                {herb.benefit}
-                              </span>
-                            </div>
-                          </li>
-                        ))}
-                    </ul>
+                
+                {result.recommendation ? (
+                  <div className="prose max-w-none text-slate-800 leading-relaxed text-lg whitespace-pre-wrap font-semibold">
+                    {result.recommendation.replace(/\*\*/g, '')}
                   </div>
-                  <div>
-                    <h5 className="font-black text-slate-950 flex gap-2 text-xl md:text-2xl mb-8">
-                      <ClipboardCheck className="text-emerald-500" /> Lifestyle
-                      Support
-                    </h5>
-                    <ul className="space-y-6">
-                      {result.lifestyle &&
-                        result.lifestyle.map((item, idx) => (
-                          <li
-                            key={idx}
-                            className="flex gap-4 items-start bg-slate-50 p-5 rounded-2xl"
-                          >
-                            <div className="mt-1 bg-emerald-100 p-1.5 rounded-full flex-shrink-0">
-                              <CheckCircle2
-                                size={18}
-                                className="text-emerald-600"
-                              />
-                            </div>
-                            <span className="text-slate-800 text-sm font-bold">
-                              {item}
-                            </span>
-                          </li>
-                        ))}
-                    </ul>
-                  </div>
-                </div>
+                ) : (
+                  <>
+                    <p className="text-slate-800 leading-relaxed text-lg md:text-xl font-semibold mb-12">
+                      {result.reasoning}
+                    </p>
+                    <div className="my-12 h-0.5 bg-slate-100" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                      <div>
+                        <h5 className="font-black text-slate-950 flex gap-2 text-xl md:text-2xl mb-8">
+                          <Leaf className="text-emerald-500" /> Protocol Herbs
+                        </h5>
+                        <ul className="space-y-6">
+                          {result.herbs &&
+                            result.herbs.map((herb: any, idx: number) => (
+                              <li
+                                key={idx}
+                                className="flex gap-4 items-start bg-slate-50 p-5 rounded-2xl"
+                              >
+                                <div className="mt-1 bg-emerald-100 p-1.5 rounded-full flex-shrink-0">
+                                  <CheckCircle2
+                                    size={18}
+                                    className="text-emerald-600"
+                                  />
+                                </div>
+                                <div>
+                                  <strong className="block text-slate-900 text-lg font-black">
+                                    {herb.name}
+                                  </strong>
+                                  <span className="text-slate-600 text-sm font-bold">
+                                    {herb.benefit}
+                                  </span>
+                                </div>
+                              </li>
+                            ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <h5 className="font-black text-slate-950 flex gap-2 text-xl md:text-2xl mb-8">
+                          <ClipboardCheck className="text-emerald-500" /> Lifestyle
+                          Support
+                        </h5>
+                        <ul className="space-y-6">
+                          {result.lifestyle &&
+                            result.lifestyle.map((item: string, idx: number) => (
+                              <li
+                                key={idx}
+                                className="flex gap-4 items-start bg-slate-50 p-5 rounded-2xl"
+                              >
+                                <div className="mt-1 bg-emerald-100 p-1.5 rounded-full flex-shrink-0">
+                                  <CheckCircle2
+                                    size={18}
+                                    className="text-emerald-600"
+                                  />
+                                </div>
+                                <span className="text-slate-800 text-sm font-bold">
+                                  {item}
+                                </span>
+                              </li>
+                            ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
