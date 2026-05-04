@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: arogya-backend
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn backend.index:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+      - key: PORT
+        value: 10000
+      - key: GEMINI_API_KEY
+        sync: false
