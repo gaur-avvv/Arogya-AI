@@ -6,6 +6,7 @@
 ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
 ![Vercel](https://img.shields.io/badge/vercel-%23000000.svg?style=for-the-badge&logo=vercel&logoColor=white)
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 
 
 
@@ -26,6 +27,38 @@ Traditional Ayurvedic diagnostics rely heavily on practitioner intuition, while 
 1. Combining mathematical Random Forest predictions with Generative LLM contextual reasoning.
 2. Utilizing Explainable AI (XAI) so doctors can see *why* the AI made its decision.
 3. Implementing strict Clinical Safety Guardrails that mask low-confidence predictions to prevent patient panic.
+
+---
+
+## 🚀 System Architecture & Flow
+
+```mermaid
+graph TD
+    subgraph "Frontend / Client Edge (Vercel/Browser)"
+        UI_P[Patient Dashboard] -->|Log Symptoms & Vitals| React[React / Vite Frontend]
+        UI_D[Doctor Dashboard] -->|Review & Run AI Diagnosis| React
+        React <-->|Authentication & Patient Records| Auth[(Firebase Auth & Firestore)]
+        React -->|Client-Side Fallback Action| Gemini_Client[Gemini LLM Browser API]
+    end
+
+    subgraph "Backend / ML Engine (Render & Docker)"
+        API[FastAPI Gateway]
+        ML[Scikit-learn RF Model]
+        Gemini[Google Gemini 2.5 Server Action]
+    end
+    
+    React -->|REST /api/predict| API
+    API -->|TF-IDF + Feature Vectorization| ML
+    ML -->|Diagnosis Prediction + Confidence Score| API
+    
+    API -->|Condition Routing| Router{Confidence > 35%?}
+    Router -- Yes --> Gemini
+    Router -- No --> Fail[Return 'Inconclusive Data' Warning]
+    
+    Gemini -->|Generate Personalized Ayurvedic Treatment| API
+    Fail --> API
+    API -->|Deliver Hybrid Diagnosis Payload| React
+```
 
 ---
 
@@ -94,10 +127,21 @@ npm run dev
 ```
 The React app will start running on `http://localhost:5173`. Proxies are mapped so your frontend gracefully calls the backend on `localhost:8000/api`.
 
-### 4. Deployment (Vercel & Render)
+### 4. Deployment (Vercel & Render / Nixpacks)
 Due to Vercel's 500MB serverless limit, this architecture is split for maximum free-tier performance:
-1. **Frontend (Vercel):** Connect your GitHub repo to Vercel. Vercel automatically detects Vite. Add an environment variable `VITE_API_URL` pointing to your Render backend URL.
-2. **Backend (Render):** Connect your repository to Render as a "Blueprint" using the included `render.yaml`. Add your `GEMINI_API_KEY` to the environment variables. Render will automatically spin up the Python FastAPI server.
+1. **Frontend (Vercel):** Connect your GitHub repo to Vercel. Vercel automatically detects Vite. Includes custom `vercel.json` to safely bypass Python modules.
+2. **Backend (Render):** Connect your repository to Render using `render.yaml` or Nixpacks. Add your `GEMINI_API_KEY` to the environment. When configuring via Nixpacks natively:
+    ```toml
+    [build]
+    builder = "NIXPACKS"
+    buildCommand = "pip install -r requirements.txt && python train_model.py"
+
+    [deploy]
+    startCommand = "uvicorn backend.index:app --host 0.0.0.0 --port $PORT"
+    healthcheckPath = "/api/health"
+    healthcheckTimeout = 300
+    restartPolicyType = "on_failure"
+    ```
 
 ---
 
@@ -111,37 +155,7 @@ ArogyaAI is built to scale. Future iterations of this platform will focus on con
 
 ---
 
-*👨‍💻 Academic Integrity & Acknowledgements: This project was developed to demonstrate full-stack software engineering, ethical AI implementation, and modern cloud database architecture. ArogyaAI is a prototype Clinical Decision Support System. It is designed to assist, not replace, licensed medical professionals.*
-
-🏃 Lifestyle Advice
-- Practice gentle yoga and stretching exercises daily to maintain flexibility
-- Keep joints warm, especially during cold weather
-- Apply warm sesame oil massage to affected joints before bathing
-- Maintain regular sleep schedule (sleep before 10 PM, wake before 6 AM)
-- Stay active but avoid overexertion
-- Practice stress management through meditation and pranayama
-
-🌿 Home Remedies & Precautions
-- Drink warm water with ginger throughout the day
-- Apply warm sesame or castor oil to painful joints
-- Use heating pads or warm compresses on affected areas
-- Take turmeric milk (1 tsp turmeric in warm milk) before bed
-- Gentle massage with warm oils improves circulation
-- Epsom salt bath can provide relief
-
-👤 How Treatment Affects Your Body Type
-These Ayurvedic treatments specifically address Vata imbalance by providing warmth, 
-lubrication, and nourishment to your joints. The warm, oily therapies counteract the 
-cold, dry nature of aggravated Vata, helping restore balance and mobility. Regular 
-practice will strengthen your tissues, reduce inflammation, and improve overall joint health.
-
-⚠️ Important Note: This is a complementary Ayurvedic approach. For severe arthritis, 
-persistent pain, or worsening symptoms, please consult with a qualified healthcare 
-professional or rheumatologist for comprehensive medical evaluation and treatment.
-
----
-💡 This analysis combines ML prediction (96.50% confidence) with traditional Ayurvedic 
-wisdom to provide personalized recommendations based on your unique constitution and symptoms.
+*👨‍💻 **Disclaimer & Academic Integrity:** ArogyaAI is a prototype Clinical Decision Support System exhibiting full-stack engineering logic, robust backend integrations, and modern AI implementations. It is designed stringently to assist, not replace, licensed medical professionals.*
 ```
 
 ## System Architecture
