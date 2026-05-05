@@ -10,22 +10,14 @@ import {
 } from "react-router-dom";
 import {
   Activity,
-  Sparkles,
-  Wind,
-  Thermometer,
-  ClipboardCheck,
   ChevronRight,
   BrainCircuit,
   Leaf,
-  AlertCircle,
-  Download,
   CheckCircle2,
   Mail,
   Lock,
   LogIn,
   User,
-  PieChart,
-  ActivitySquare,
   LayoutDashboard,
   Settings,
   HelpCircle,
@@ -33,14 +25,22 @@ import {
   Key,
   Shield,
   LogOut,
-  Save,
   Menu,
   X,
   HeartPulse,
   PlusCircle,
-  MessageSquare,
   Calendar,
   Building,
+  Save,
+  ClipboardCheck,
+  Wind,
+  ActivitySquare,
+  MessageSquare,
+  PieChart,
+  Thermometer,
+  AlertCircle,
+  Sparkles,
+  Download,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -808,7 +808,29 @@ function ProfileSettings({
                 <Key className="absolute left-4 top-4 text-slate-400 w-6 h-6" />
                 <input
                   type="password"
+                  value={localStorage.getItem("geminiApiKey") || ""}
+                  onChange={(e) => {
+                    localStorage.setItem("geminiApiKey", e.target.value);
+                  }}
                   placeholder="AIzaSy..."
+                  className="w-full pl-14 pr-6 py-4 rounded-2xl border-2 border-slate-200 focus:border-emerald-500 outline-none font-bold text-lg font-mono"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3 mt-4">
+              <label className="text-sm font-black uppercase tracking-widest text-slate-400">
+                Render API Base URL
+              </label>
+              <div className="relative">
+                <Shield className="absolute left-4 top-4 text-slate-400 w-6 h-6" />
+                <input
+                  type="url"
+                  value={localStorage.getItem("renderUrl") || ""}
+                  onChange={(e) => {
+                    localStorage.setItem("renderUrl", e.target.value);
+                  }}
+                  placeholder="https://arogya-ai.onrender.com"
                   className="w-full pl-14 pr-6 py-4 rounded-2xl border-2 border-slate-200 focus:border-emerald-500 outline-none font-bold text-lg font-mono"
                 />
               </div>
@@ -880,6 +902,8 @@ function DiagnosticTool({ userData }: { userData: UserData | null }) {
   });
 
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const renderUrl = localStorage.getItem("renderUrl") || "";
+  const geminiApiKey = localStorage.getItem("geminiApiKey") || "";
   const location = useLocation();
 
   useEffect(() => {
@@ -974,8 +998,8 @@ function DiagnosticTool({ userData }: { userData: UserData | null }) {
         Weather: "Clear"
       };
 
-      // Determine API URL based on environment
-      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      // Determine API URL based on environment or user input
+      const API_BASE_URL = renderUrl || import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const response = await fetch(`${API_BASE_URL}/api/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -986,6 +1010,43 @@ function DiagnosticTool({ userData }: { userData: UserData | null }) {
         throw new Error("AI Server unreachable or API limit hit.");
 
       const data = await response.json();
+      
+      // If user provided Gemini Key, we can fetch LLM details explicitly
+      if (geminiApiKey) {
+        try {
+          const prompt = `You are an expert Ayurvedic health assistant. Your task is to analyze a user's health data and an initial model prediction, then provide a final, trustworthy, and personalized Ayurvedic diagnosis and plan.
+
+**User's Health Profile:**
+- **Symptoms:** ${apiPayload.Symptoms}
+- **Age:** ${apiPayload.Age}
+- **Gender:** ${apiPayload.Gender}
+- **Body Type (Dosha):** ${apiPayload.Body_Type_Dosha_Sanskrit}
+
+**Initial Analysis:**
+- **Predicted Condition:** ${data.prediction || data.ml_prediction}
+- **Initial Confidence:** ${data.confidence}
+
+Provide a concise, easy to read explanation and a personalized plan featuring herbs and diet based on Ayurveda.`;
+
+          const geminiReq = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+              }),
+            }
+          );
+          const geminiRes = await geminiReq.json();
+          if (geminiRes.candidates && geminiRes.candidates.length > 0) {
+             data.recommendation = geminiRes.candidates[0].content.parts[0].text;
+          }
+        } catch (e) {
+          console.warn("Gemini client-side fetch failed", e);
+        }
+      }
+
       setResult(data);
       setShowResult(true);
     } catch (err: any) {
