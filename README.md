@@ -1,4 +1,4 @@
-# 🌿 ArogyaAI: Hybrid Intelligence for Ayurvedic Clinical Support
+# 🌿 Arogya AI – Disease Prediction System with Ayurvedic Intelligence
 
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![Firebase](https://img.shields.io/badge/firebase-%23039BE5.svg?style=for-the-badge&logo=firebase)
@@ -6,25 +6,18 @@
 ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
 ![Vercel](https://img.shields.io/badge/vercel-%23000000.svg?style=for-the-badge&logo=vercel&logoColor=white)
-![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 
+ArogyaAI is a comprehensive Clinical Decision Support System (CDSS) that bridges the gap between traditional Ayurvedic medicine and modern Artificial Intelligence. It provides both accurate disease diagnosis and personalized Ayurvedic treatment recommendations.
 
-
-https://github.com/user-attachments/assets/71080ee0-c7ad-4143-b0fb-4fe6cfd9c607
-
-
-
-ArogyaAI is a modern, cloud-connected Clinical Decision Support System (CDSS) designed to bridge the gap between traditional Ayurvedic medicine and modern Artificial Intelligence. 
-
-By utilizing a **Dual-Engine AI Architecture** (Deterministic Machine Learning + Generative AI) and strict **Role-Based Access Control (RBAC)**, ArogyaAI provides a secure, end-to-end ecosystem for both patients and medical practitioners. This project is configured as a full-stack monorepo with automated CI/CD and serverless deployments on Vercel.
+By utilizing a **Dual-Engine AI Architecture** (Deterministic Machine Learning + Generative AI) and strict **Role-Based Access Control (RBAC)**, ArogyaAI provides a secure, end-to-end ecosystem for both patients and medical practitioners. The system can be run completely offline via command-line interface (CLI) or as a fully deployed cloud web platform.
 
 ---
 
 ## 🎯 The Problem & Solution
-Traditional Ayurvedic diagnostics rely heavily on practitioner intuition, while modern medical AI models act as "black boxes" that ignore holistic factors like Doshas (Prakriti) and seasonality. Furthermore, exposing raw, low-confidence ML predictions directly to patients poses a severe ethical and psychological risk.
+Traditional Ayurvedic diagnostics rely heavily on practitioner intuition, while modern medical AI models act as "black boxes" that ignore holistic factors like Doshas (Prakriti) and seasonality. Exposing raw, low-confidence ML predictions directly to patients poses a severe psychological risk.
 
 **ArogyaAI solves this by:**
-1. Combining mathematical Random Forest predictions with Generative LLM contextual reasoning.
+1. Combining mathematical Random Forest predictions (99%+ accuracy) with Generative LLM contextual reasoning.
 2. Utilizing Explainable AI (XAI) so doctors can see *why* the AI made its decision.
 3. Implementing strict Clinical Safety Guardrails that mask low-confidence predictions to prevent patient panic.
 
@@ -34,272 +27,152 @@ Traditional Ayurvedic diagnostics rely heavily on practitioner intuition, while 
 
 ```mermaid
 graph TD
-    subgraph "Frontend / Client Edge (Vercel/Browser)"
-        UI_P[Patient Dashboard] -->|Log Symptoms & Vitals| React[React / Vite Frontend]
-        UI_D[Doctor Dashboard] -->|Review & Run AI Diagnosis| React
-        React <-->|Authentication & Patient Records| Auth[(Firebase Auth & Firestore)]
-        React -->|Client-Side Fallback Action| Gemini_Client[Gemini LLM Browser API]
+    subgraph "Frontend / Client Edge"
+        UI_P[Patient Dashboard] -->|Log Symptoms| React[React / Vite Frontend]
+        UI_D[Doctor Dashboard] -->|Review Patient| React
     end
 
-    subgraph "Backend / ML Engine (Render & Docker)"
-        API[FastAPI Gateway]
+    subgraph "Backend / ML Engine"
+        API[FastAPI Gateway / CLI]
         ML[Scikit-learn RF Model]
-        Gemini[Google Gemini 2.5 Server Action]
+        Gemini[Google Gemini 2.5]
     end
     
-    React -->|REST /api/predict| API
-    API -->|TF-IDF + Feature Vectorization| ML
-    ML -->|Diagnosis Prediction + Confidence Score| API
-    
+    React <-->|REST API| API
+    API -->|TF-IDF + Vectorization| ML
+    ML -->|Diagnosis Prediction| API
     API -->|Condition Routing| Router{Confidence > 35%?}
     Router -- Yes --> Gemini
-    Router -- No --> Fail[Return 'Inconclusive Data' Warning]
-    
-    Gemini -->|Generate Personalized Ayurvedic Treatment| API
-    Fail --> API
-    API -->|Deliver Hybrid Diagnosis Payload| React
+    Router -- No --> Fail[Return 'Inconclusive Data']
+    Gemini -->|Ayurvedic Treatment| API
+    API -->|Deliver Hybrid Payload| React
 ```
 
 ---
 
-## ✨ Key Features
+## ✨ Key Features & Model Performance
 
-### 🔐 Role-Based Architecture (Multi-Tenant)
-* **Practitioner Portal:** Doctors have a comprehensive dashboard to run AI diagnostics, view clinic-wide metrics, and manage patient records.
-* **Patient Portal:** Patients have a soothing, non-intimidating dashboard to log daily symptoms (Health Diaries) and view safe, actionable Ayurvedic protocols prescribed by their doctor.
-* **Clinic ID Siloing:** Data is strictly isolated. Patients link their accounts to a specific doctor using a unique 6-character `Clinic ID`, ensuring secure, HIPAA-compliant-style data routing.
+### 🧠 Dual-Engine AI & Analytics
+* **High-Accuracy ML Model:** Over 99% accuracy using a Random Forest Classifier trained on 819 features (12 basic + 807 TF-IDF symptom NLP tokens).
+* **SMOTE Class Balancing:** Up-sampled dataset from 4,201 to 20,748 samples for robust predictions across 399 potential diseases.
+* **LLM Contextual Validation:** Evaluates symptoms against season, weather, and dosha using Gemini 2.5 Pro.
 
-### 🧠 Dual-Engine AI System
-* **Engine 1 (Deterministic):** A Python API backend running a trained Random Forest model (Scikit-Learn). It analyzes symptom strings via TF-IDF vectorization and outputs a disease probability and confidence score.
-* **Engine 2 (Generative):** Google Gemini 2.5 LLM analyzes the patient's Dosha, age, gender, and the ML prediction to generate a holistic, personalized Ayurvedic protocol (Herbs & Lifestyle).
+### 🌿 Ayurvedic Intelligence
+* **Comprehensive Dosha Selection:** Detailed assessment supporting Vata, Pitta, Kapha, and mixed body constitutions.
+* **Granular Treatment Plans:** Provides Sanskrit and English herb names, precise dietary recommendations, and Ayurvedic therapies (Abhyanga, Nasya, Panchakarma).
 
-### 🛡️ Clinical Safety Guardrails & Ethics
-* **Explainable AI (XAI):** Doctors are provided with an "AI X-Ray" showing the weight of each symptom that led to the ML prediction.
-* **Confidence Thresholding:** If the AI confidence falls below 35%, the system automatically flags the result as "Inconclusive Data" and warns the doctor, preventing misdiagnosis from vague inputs.
-* **Patient View Filtering:** Raw, Western disease labels are masked on the Patient Dashboard. Instead, patients see comforting, actionable advice.
-
----
-
-## 🛠️ System Architecture & Tech Stack
-
-**Frontend:**
-* React.js (Vite)
-* Tailwind CSS (Styling)
-* Framer Motion (Fluid Animations)
-* Lucide React (Iconography)
-
-**Backend & Cloud:**
-* FastAPI (Serverless API layer on Vercel)
-* Google Firebase Authentication (Email/Password & Single Sign-On via Google)
-* Google Firestore (NoSQL Database for Users, Patient Records, and Diaries)
-* GitHub Actions (CI/CD Automated Linting & Build pipelines)
-
-**Artificial Intelligence:**
-* Scikit-Learn (Random Forest Classifier + SMOTE)
-* Google Gemini 2.5 Pro API (Generative LLM)
+### 🔐 Full-Stack Web Platform
+* **Role-Based Portals:** Secure Practitioner and Patient views with Clinic ID siloing.
+* **Safety Guardrails:** Masks raw Western disease labels for patients, preferring comforting actionable lifestyle advice while keeping clinical diagnostics for the doctor.
 
 ---
 
-## ⚙️ How to Deploy & Run Locally
+## ⚙️ How to Run & Use the System
 
-### 1. Clone the Repository
+You can run ArogyaAI in two distinct modes: **Web Mode** (for full UI/UX) or **CLI Mode** (offline, terminal testing).
+
+### 1. Initial Setup (Required for both modes)
 ```bash
-git clone https://github.com/yourusername/arogya-ai.git
-cd arogya-ai
-```
-
-### 2. Start the Backend API (FastAPI)
-Ensure you have Python installed, then navigate to the root directory:
-
-```bash
+git clone https://github.com/gaur-avvv/Arogya-AI.git
+cd Arogya-AI
 pip install -r requirements.txt
-uvicorn api.index:app --reload
 ```
-The FastAPI server will start running on `http://127.0.0.1:8000`. Test the endpoint at `/api/health`.
+*(Optional)* Train the model if the `random_forest_model.pkl` is missing:
+```bash
+python train_model.py
+```
 
-### 3. Start the React Frontend
-Open a new terminal window, navigate to the frontend directory:
+### 💻 Mode A: Web Interface (Full-Stack)
+Run the modern React + FastAPI ecosystem.
 
+**Start the Backend (FastAPI):**
+```bash
+uvicorn backend.index:app --reload
+# Runs on http://127.0.0.1:8000
+```
+**Start the Frontend (React):**
+Open a new terminal:
 ```bash
 cd frontend
 npm install
 npm run dev
+# Runs on http://localhost:5173
 ```
-The React app will start running on `http://localhost:5173`. Proxies are mapped so your frontend gracefully calls the backend on `localhost:8000/api`.
 
-### 4. Deployment (Vercel & Render / Nixpacks)
-Due to Vercel's 500MB serverless limit, this architecture is split for maximum free-tier performance:
-1. **Frontend (Vercel):** Connect your GitHub repo to Vercel. Vercel automatically detects Vite. Includes custom `vercel.json` to safely bypass Python modules.
-2. **Backend (Render):** Connect your repository to Render using `render.yaml` or Nixpacks. Add your `GEMINI_API_KEY` to the environment. When configuring via Nixpacks natively:
-    ```toml
-    [build]
-    builder = "NIXPACKS"
-    buildCommand = "pip install -r requirements.txt && python train_model.py"
-
-    [deploy]
-    startCommand = "uvicorn backend.index:app --host 0.0.0.0 --port $PORT"
-    healthcheckPath = "/api/health"
-    healthcheckTimeout = 300
-    restartPolicyType = "on_failure"
-    ```
+### 🖥️ Mode B: CLI Assessment (Terminal)
+For developers or offline scenarios wanting to talk directly to the model.
+```bash
+python arogya_predict.py
+```
+*Follow the interactive prompts to enter symptoms (e.g., "joint pain, morning stiffness"), age, dosha, etc., and get a brilliant console printout of your predicted disease and Ayurvedic protocol.*
 
 ---
 
-## 🚀 Future Roadmap (What's Next?)
-ArogyaAI is built to scale. Future iterations of this platform will focus on continuous learning and broader accessibility:
+## 🌐 Deployment Architecture (Vercel & Render)
 
-1. **Continuous AI Learning (Feedback Loop):** Allow doctors to "Accept" or "Correct" the AI's diagnosis.
-2. **Wearable IoT Integration:** Connect with smartwatches (Apple Watch / Fitbit APIs) to automatically pull real-time vitals.
-3. **Multilingual Support for Rural Access:** Integrate translation APIs so patients in rural India can log symptoms in regional languages.
-4. **Telemedicine & Appointment Booking:** Add a scheduling system where doctors can trigger video calls.
+Due to Vercel's 500MB serverless constraints and the heavy Scikit-Learn payload, this infrastructure is decoupled for the cloud:
+
+1. **Frontend (Vercel):** The React `frontend` folder is individually deployed on Vercel. Set the environment variable `VITE_API_URL` to point to the secure Render backend.
+2. **Backend (Render):** The FastAPI Python backend is deployed via Render using the configured `render.yaml` Blueprint. It effortlessly handles the heavy `numpy` and `pandas` memory footprints on a persistent web service.
 
 ---
 
-*👨‍💻 **Disclaimer & Academic Integrity:** ArogyaAI is a prototype Clinical Decision Support System exhibiting full-stack engineering logic, robust backend integrations, and modern AI implementations. It is designed stringently to assist, not replace, licensed medical professionals.*
+## 📊 Sample CLI Output
+```text
+============================================================
+AROGYA AI - Integrated ML + LLM Prediction System
+============================================================
+Enter your symptoms: joint pain, stiffness, swelling, difficulty walking
+Enter your age: 52
+Enter your general body type: Medium
+...
+   => ML Model Prediction: 'Arthritis' (Confidence: 96.50%)
+
+🌿 Your Personalized Ayurvedic Plan
+
+🩺 Condition Explained
+Sandhivata (Arthritis) occurs when Vata dosha accumulates in the joints (Sandhi), causing pain, stiffness, and inflammation...
+
+Ayurvedic Medicinal Herbs
+- Sanskrit: Shallaki, Guggulu, Ashwagandha
+- English: Boswellia, Indian Bdellium, Winter Cherry
+- Effects: Anti-inflammatory, reduces joint pain
+
+🥗 Dietary Recommendations
+- Warm, cooked, and easily digestible foods
+- Ghee, sesame oil, and healthy fats
 ```
 
-## System Architecture
+---
 
+## 📈 Detailed System Architecture & Performance
+
+### End-to-End Pipeline
 1. **Data Processing**: TF-IDF vectorization of symptoms (807 features)
 2. **Feature Engineering**: 12 basic health features + 807 symptom features = 819 total features
-3. **Class Balancing**: SMOTE applied for balanced training dataset (4201 → 20748 samples)
-4. **Model Training**: Random Forest/Logistic Regression/SVM with ensemble approach
-5. **ML Prediction**: Initial disease prediction using trained Random Forest model
-6. **LLM Analysis**: Advanced contextual analysis considering all symptoms and lifestyle factors
-7. **Ayurvedic Integration**: Comprehensive traditional medicine database with personalized recommendations
-8. **Confidence Calibration**: Intelligent assessment of prediction confidence based on symptom patterns
+3. **Class Balancing**: SMOTE applied for balanced training dataset (4,201 → 20,748 samples)
+4. **Model Training**: Ensemble logic utilizing Random Forest alongside dynamic feature loading.
+5. **LLM Analysis**: Live contextual generation mapping inference to traditional Sanskrit/English medicine databases.
 
-## Model Performance
-
+### Model Accuracy
 - **Random Forest Accuracy**: 1.0000 (100%)
 - **Logistic Regression Accuracy**: 0.9964 (99.64%)
 - **SVM Accuracy**: 0.9417 (94.17%)
-- **Feature Set**: 819 features (12 basic + 807 TF-IDF)
-- **Training Dataset**: 4,201 samples across 399 diseases
-- **SMOTE Augmentation**: 20,748 balanced samples
-- **Diseases Supported**: 399 disease categories with full Ayurvedic treatment plans
 
-## Supported Diseases
+---
 
-The system supports diagnosis and Ayurvedic treatment recommendations for **399+ diseases** across multiple medical categories:
+## 🔬 Supported Medical Domains (399+ Diseases)
+The robust deterministic logic maps accurately to over 399 unique conditions spanning categories like:
+- **Infectious Diseases:** Dengue, Tuberculosis, Malaria, Hepatitis
+- **Metabolic & Endocrine:** Diabetes, Hypertension, Thyroid, PCOS
+- **Cardiovascular & Digestive:** Stroke, Heart Disease, Gastroenteritis, Peptic Ulcers
+- **Neurological & Mental Health:** Migraine, Depression, Insomnia, Epilepsy
+- **Musculoskeletal:** Arthritis, Spondylosis, Osteoporosis
+- **And hundreds more!**
 
-### Infectious Diseases
-- Common Cold
-- Influenza (Flu)
-- Pneumonia
-- Tuberculosis
-- Dengue
-- Malaria
-- Chikungunya
-- Chicken Pox
-- Measles
-- Mumps
-- Typhoid
-- Hepatitis A, B, C
-- HIV/AIDS
-- Urinary Tract Infection
-- Skin Infection
-- Fungal Infection
-- Cholera
-- Diarrhoea
+---
 
-### Metabolic & Endocrine Disorders
-- Diabetes
-- Hypertension
-- Thyroid Disorders (Hyper/Hypothyroidism)
-- Obesity
-- PCOS (Polycystic Ovary Syndrome)
-- Anemia
-
-### Respiratory Conditions
-- Asthma
-- Bronchitis
-- Sinusitis
-- Cough
-- Fever
-
-### Cardiovascular Diseases
-- Heart Disease
-- Stroke
-
-### Digestive System Disorders
-- Gastritis
-- Gastroenteritis
-- Constipation
-- Appendicitis
-- Peptic Ulcer
-- Jaundice
-- Cirrhosis
-- Fatty Liver
-- Gallstones
-- Kidney Stones
-
-### Neurological & Mental Health
-- Migraine
-- Headache
-- Depression
-- Anxiety
-- Insomnia
-- Epilepsy
-- Alzheimer Disease
-- Parkinson Disease
-- Meningitis
-- Encephalitis
-
-### Musculoskeletal Disorders
-- Arthritis
-- Cervical Spondylosis
-- Disc Prolapse
-- Rheumatoid Arthritis
-- Gout
-- Osteoporosis
-- Paralysis
-
-### Skin & Hair Conditions
-- Acne
-- Allergy
-- Eczema
-- Psoriasis
-- Dandruff
-- Hair Loss
-- Vitiligo
-
-### Eye, Ear & Dental Issues
-- Conjunctivitis
-- Glaucoma
-- Cataract
-- Hearing Loss
-- Tinnitus
-- Vertigo
-- Toothache
-- Gum Disease
-- Mouth Ulcer
-
-### Reproductive & Urogenital Health
-- Erectile Dysfunction
-- Infertility
-- Menstrual Disorders
-- Endometriosis
-- Menopause
-- Prostate Enlargement
-- Overactive Bladder
-- Urinary Incontinence
-
-### Cancer Types
-- Breast Cancer
-- Various other cancer types
-
-### Other Conditions
-- Cancer (various types)
-- Sleep Apnea
-- Chronic Fatigue Syndrome
-- Fibromyalgia
-- Autoimmune Disorders
-- Lupus
-- Multiple Sclerosis
-- Carpal Tunnel Syndrome
-- Tennis Elbow
-- Plantar Fasciitis
+*👨‍💻 **Academic Integrity:** ArogyaAI is a prototype Clinical Decision Support System exhibiting full-stack engineering logic, robust backend integrations, and modern AI implementations. It is designed stringently to assist, not replace, licensed medical professionals.*
 - Chronic Pain Syndromes
 
 *The complete system supports 399+ diseases in total, with comprehensive Ayurvedic treatment recommendations for each condition.*
