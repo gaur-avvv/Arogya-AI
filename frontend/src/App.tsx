@@ -87,6 +87,7 @@ interface AnalysisResult {
   reasoning: string;
   herbs: { name: string; benefit: string }[];
   lifestyle: string[];
+  recommendation?: string;
 }
 
 interface UserData {
