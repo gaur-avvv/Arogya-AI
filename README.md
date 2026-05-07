@@ -11,6 +11,8 @@ ArogyaAI is a comprehensive Clinical Decision Support System (CDSS) that bridges
 
 By utilizing a **Dual-Engine AI Architecture** (Deterministic Machine Learning + Generative AI) and strict **Role-Based Access Control (RBAC)**, ArogyaAI provides a secure, end-to-end ecosystem for both patients and medical practitioners. The system can be run completely offline via command-line interface (CLI) or as a fully deployed cloud web platform.
 
+https://github.com/user-attachments/assets/71080ee0-c7ad-4143-b0fb-4fe6cfd9c607
+
 ---
 
 ## 🎯 The Problem & Solution
@@ -22,6 +24,7 @@ Traditional Ayurvedic diagnostics rely heavily on practitioner intuition, while 
 3. Implementing strict Clinical Safety Guardrails that mask low-confidence predictions to prevent patient panic.
 
 ---
+
 
 ## 🚀 System Architecture & Flow
 
