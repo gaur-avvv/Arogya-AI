@@ -166,9 +166,21 @@ python arogya_predict.py
 ```
 
 ### 4. Interactive Mode
-For personalized assessment, run the script and choose interactive mode when prompted:
+For personalized assessment, run the script and provide your clinical symptoms when prompted:
 ```bash
 python arogya_predict.py
+```
+
+### 5. Run Clinical Case Study Demonstration
+```bash
+python demo.py
+```
+
+### 6. Run Automated Test Suite
+```bash
+python -m unittest discover -s tests -p "test_*.py"
+# Or run the offline fallback test suite specifically:
+python test_fallback.py
 ```
 
 
