@@ -11,14 +11,16 @@ from arogya_predict import (
     preprocess_input,
     get_llm_validation_and_explanation,
     get_symptom_weights,
+    get_ayurvedic_record,
     model,
     encoders
 )
+from hdi_engine import analyze_herb_drug_interactions
 
 app = FastAPI(
     title="ArogyaAI API",
-    description="Clinical Decision Support System combining deterministic ML disease prediction with Ayurvedic intelligence.",
-    version="1.1.0"
+    description="Clinical Decision Support System combining deterministic ML disease prediction with Ayurvedic intelligence & Pharmacovigilance.",
+    version="1.2.0"
 )
 
 app.add_middleware(
@@ -41,6 +43,11 @@ class PredictRequest(BaseModel):
     Allergies: str = "None"
     Season: str = "Spring"
     Weather: str = "Clear"
+
+class HDICheckRequest(BaseModel):
+    medications: str
+    herbs: str
+    allergies: str = "None"
 
 @app.post("/api/predict")
 def predict_disease(data: PredictRequest):
@@ -70,6 +77,15 @@ def predict_disease(data: PredictRequest):
         # Compute symptom weight breakdown for Explainable AI (AI X-Ray)
         xai_breakdown = get_symptom_weights(data.Symptoms)
         
+        # Perform Herb-Drug Interaction (HDI) Safety Screening
+        rec = get_ayurvedic_record(predicted_disease, data.Body_Type_Dosha_Sanskrit)
+        herbs_to_check = f"{rec.get('Ayurvedic_Herbs_Sanskrit', '')}, {rec.get('Ayurvedic_Herbs_English', '')}"
+        hdi_safety_alerts = analyze_herb_drug_interactions(
+            current_medications=data.Current_Medication,
+            recommended_herbs=herbs_to_check,
+            allergies=data.Allergies
+        )
+
         # Clinical Guardrail: Check confidence threshold
         if confidence < 35.0:
             return {
@@ -77,7 +93,8 @@ def predict_disease(data: PredictRequest):
                 "confidence": round(confidence, 1),
                 "recommendation": "The AI confidence is too low based on your provided symptoms. Please consult a doctor immediately.",
                 "ml_prediction": predicted_disease,
-                "xai_breakdown": xai_breakdown
+                "xai_breakdown": xai_breakdown,
+                "hdi_safety_alerts": hdi_safety_alerts
             }
         
         # Get generative validation or offline Ayurvedic database plan
@@ -88,8 +105,24 @@ def predict_disease(data: PredictRequest):
             "confidence": round(confidence, 1),
             "recommendation": llm_response,
             "ml_prediction": predicted_disease,
-            "xai_breakdown": xai_breakdown
+            "xai_breakdown": xai_breakdown,
+            "hdi_safety_alerts": hdi_safety_alerts
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/check-hdi")
+def check_hdi(data: HDICheckRequest):
+    """
+    Dedicated endpoint for practitioners and pharmacists to screen arbitrary
+    allopathic medications against Ayurvedic herbs and botanical allergens.
+    """
+    try:
+        return analyze_herb_drug_interactions(
+            current_medications=data.medications,
+            recommended_herbs=data.herbs,
+            allergies=data.allergies
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -97,7 +130,8 @@ def predict_disease(data: PredictRequest):
 def read_root():
     return {
         "message": "Welcome to ArogyaAI API. Visit /docs for Swagger UI documentation.",
-        "health_check": "/api/health"
+        "health_check": "/api/health",
+        "hdi_screening": "/api/check-hdi"
     }
 
 @app.get("/api/health")
@@ -105,5 +139,6 @@ def health_check():
     return {
         "status": "healthy",
         "service": "ArogyaAI Backend",
-        "model_loaded": model is not None
+        "model_loaded": model is not None,
+        "hdi_engine_active": True
     }
