@@ -1,10 +1,11 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import Optional, Dict, Any
 import sys
 import os
 
-# Add the root directory to sys.path so we can import from arogya_predict
+# Add the root directory to sys.path so we can import modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from arogya_predict import (
@@ -16,11 +17,16 @@ from arogya_predict import (
     encoders
 )
 from hdi_engine import analyze_herb_drug_interactions
+from telemetry_nadi_engine import (
+    SmartwatchTelemetry,
+    analyze_smartwatch_nadi,
+    get_sample_telemetry
+)
 
 app = FastAPI(
     title="ArogyaAI API",
-    description="Clinical Decision Support System combining deterministic ML disease prediction with Ayurvedic intelligence & Pharmacovigilance.",
-    version="1.2.0"
+    description="Clinical Decision Support System combining deterministic ML disease prediction, Ayurvedic intelligence, Pharmacovigilance, and Smartwatch Telemetry (Digital Nadi Pariksha).",
+    version="1.3.0"
 )
 
 app.add_middleware(
@@ -43,6 +49,7 @@ class PredictRequest(BaseModel):
     Allergies: str = "None"
     Season: str = "Spring"
     Weather: str = "Clear"
+    telemetry: Optional[SmartwatchTelemetry] = None
 
 class HDICheckRequest(BaseModel):
     medications: str
@@ -86,6 +93,11 @@ def predict_disease(data: PredictRequest):
             allergies=data.Allergies
         )
 
+        # Optional: Analyze Smartwatch Telemetry (Digital Nadi Pariksha)
+        digital_nadi_report = None
+        if data.telemetry is not None:
+            digital_nadi_report = analyze_smartwatch_nadi(data.telemetry)
+
         # Clinical Guardrail: Check confidence threshold
         if confidence < 35.0:
             return {
@@ -94,7 +106,8 @@ def predict_disease(data: PredictRequest):
                 "recommendation": "The AI confidence is too low based on your provided symptoms. Please consult a doctor immediately.",
                 "ml_prediction": predicted_disease,
                 "xai_breakdown": xai_breakdown,
-                "hdi_safety_alerts": hdi_safety_alerts
+                "hdi_safety_alerts": hdi_safety_alerts,
+                "digital_nadi_telemetry": digital_nadi_report
             }
         
         # Get generative validation or offline Ayurvedic database plan
@@ -106,7 +119,8 @@ def predict_disease(data: PredictRequest):
             "recommendation": llm_response,
             "ml_prediction": predicted_disease,
             "xai_breakdown": xai_breakdown,
-            "hdi_safety_alerts": hdi_safety_alerts
+            "hdi_safety_alerts": hdi_safety_alerts,
+            "digital_nadi_telemetry": digital_nadi_report
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -126,12 +140,32 @@ def check_hdi(data: HDICheckRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/telemetry/analyze")
+def analyze_telemetry(data: SmartwatchTelemetry):
+    """
+    Ingests live smartwatch biometrics (HR, HRV RMSSD, temp, SpO2, sleep) and
+    produces a Digital Nadi Pariksha report, Tridosha drift, and Ojas score.
+    Solves GitHub Issue #8.
+    """
+    try:
+        return analyze_smartwatch_nadi(data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/telemetry/sample")
+def get_sample_telemetry_endpoint(profile: str = Query("vata_stress", enum=["vata_stress", "pitta_heat", "kapha_calm"])):
+    """
+    Returns realistic simulated smartwatch telemetry samples for clinical demo.
+    """
+    return get_sample_telemetry(profile)
+
 @app.get("/")
 def read_root():
     return {
         "message": "Welcome to ArogyaAI API. Visit /docs for Swagger UI documentation.",
         "health_check": "/api/health",
-        "hdi_screening": "/api/check-hdi"
+        "hdi_screening": "/api/check-hdi",
+        "smartwatch_telemetry": "/api/telemetry/analyze"
     }
 
 @app.get("/api/health")
@@ -140,5 +174,6 @@ def health_check():
         "status": "healthy",
         "service": "ArogyaAI Backend",
         "model_loaded": model is not None,
-        "hdi_engine_active": True
+        "hdi_engine_active": True,
+        "smartwatch_telemetry_active": True
     }

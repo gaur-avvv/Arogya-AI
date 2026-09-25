@@ -82,12 +82,44 @@ interface FormData {
 interface AnalysisResult {
   prediction: string;
   confidence: number;
-  xai_breakdown: { symptom: string; weight: number }[];
-  indicators: { label: string; score: string }[];
-  reasoning: string;
-  herbs: { name: string; benefit: string }[];
-  lifestyle: string[];
+  xai_breakdown?: { symptom: string; weight: number }[];
+  indicators?: { label: string; score: string }[];
+  reasoning?: string;
+  herbs?: { name: string; benefit: string }[];
+  lifestyle?: string[];
   recommendation?: string;
+  hdi_safety_alerts?: {
+    has_alerts: boolean;
+    max_severity: string;
+    total_alerts: number;
+    summary: string;
+    alerts: Array<{
+      type: string;
+      severity: string;
+      drug_matched: string;
+      herb_matched: string;
+      drug_category: string;
+      mechanism: string;
+      clinical_advice: string;
+    }>;
+  };
+  digital_nadi_telemetry?: {
+    digital_nadi: {
+      nadi_type: string;
+      gati_classification: string;
+      gati_description: string;
+      dominant_dosha: string;
+    };
+    dosha_drift_matrix: {
+      vata_percentage: number;
+      pitta_percentage: number;
+      kapha_percentage: number;
+    };
+    ojas_vitality_index: {
+      score: number;
+      status: string;
+    };
+  };
 }
 
 interface UserData {
@@ -146,6 +178,11 @@ function Sidebar({
             name: "Symptom Logger",
             path: "/checkup",
             icon: <PlusCircle size={22} />,
+          },
+          {
+            name: "My Records & Dosha",
+            path: "/my-records",
+            icon: <ActivitySquare size={22} />,
           },
           {
             name: "Profile Settings",
@@ -458,6 +495,29 @@ function PatientDashboard({
             )}
           </div>
         </div>
+
+        {/* LONGITUDINAL RECORDS & DOSHA RADAR BANNER */}
+        <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 p-8 md:p-10 rounded-[2.5rem] text-white shadow-xl relative overflow-hidden md:col-span-2">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+            <div>
+              <span className="text-xs font-black uppercase tracking-widest text-emerald-400 bg-emerald-950/60 border border-emerald-800 px-3 py-1 rounded-full mb-3 inline-block">
+                Longitudinal Health Archive
+              </span>
+              <h3 className="text-2xl md:text-3xl font-black text-white mb-2">
+                Tridosha Balance Radar & Personal Records
+              </h3>
+              <p className="text-slate-300 max-w-xl text-sm leading-relaxed">
+                Track your constitutional equilibrium over time, view historical physician protocols, and export your official clinical prescription summary.
+              </p>
+            </div>
+            <Link
+              to="/my-records"
+              className="bg-emerald-500 text-slate-950 px-8 py-3.5 rounded-full font-black text-sm shadow-md hover:bg-emerald-400 inline-flex items-center gap-2 transition-colors whitespace-nowrap"
+            >
+              Open Health Archive <ChevronRight size={18} />
+            </Link>
+          </div>
+        </div>
       </div>
     </motion.div>
   );
@@ -722,6 +782,212 @@ function PatientRecords({ userData }: { userData: UserData | null }) {
   );
 }
 
+// --- PATIENT PERSONAL RECORDS & DOSHA TIMELINE COMPONENT ---
+function MyPersonalRecords({
+  user,
+  userData,
+}: {
+  user: FirebaseUser | null;
+  userData: UserData | null;
+}) {
+  const [logs, setLogs] = useState<any[]>([]);
+  const [prescriptions, setPrescriptions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"all" | "logs" | "prescriptions">("all");
+
+  const patientName = user?.email?.split("@")[0] || "Patient";
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!user?.email || !userData?.clinicId) return;
+      try {
+        // 1. Fetch user symptom logs
+        const logsQuery = query(
+          collection(db, "patient_logs"),
+          where("clinicId", "==", userData.clinicId)
+        );
+        const logsSnap = await getDocs(logsQuery);
+        let userLogs = logsSnap.docs
+          .map((d) => ({ id: d.id, ...(d.data() as any) }))
+          .filter((d) => d.userId === user.uid || (d.email && d.email.toLowerCase() === user.email?.toLowerCase()));
+        userLogs.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+
+        // 2. Fetch patient prescriptions
+        const presQuery = query(
+          collection(db, "patients"),
+          where("clinicId", "==", userData.clinicId)
+        );
+        const presSnap = await getDocs(presQuery);
+        let userPres = presSnap.docs
+          .map((d) => ({ id: d.id, ...(d.data() as any) }))
+          .filter((d) => d.name && d.name.toLowerCase().includes(patientName.toLowerCase()));
+        userPres.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+
+        setLogs(userLogs);
+        setPrescriptions(userPres);
+      } catch (err) {
+        console.error("Error fetching personal records:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHistory();
+  }, [user, userData, patientName]);
+
+  // Derived Dosha distribution
+  const latestDosha = prescriptions[0]?.dosha || "Vata (Air/Space)";
+  const vataRatio = latestDosha.includes("Vata") ? 50 : 25;
+  const pittaRatio = latestDosha.includes("Pitta") ? 45 : 30;
+  const kaphaRatio = latestDosha.includes("Kapha") ? 40 : 25;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-6xl mx-auto space-y-10 p-6 md:p-10"
+    >
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-4xl font-black text-slate-950 tracking-tighter">
+            Personal Health Records
+          </h1>
+          <p className="text-slate-500 font-medium text-lg">
+            Complete health diary, clinical consultation logs, and Tridosha balance timeline.
+          </p>
+        </div>
+        <button
+          onClick={() => window.print()}
+          className="bg-white border-2 border-slate-200 px-6 py-3 rounded-2xl font-black text-slate-700 flex items-center gap-2 hover:bg-slate-50 transition shadow-sm"
+        >
+          <Download size={18} /> Print Record Summary
+        </button>
+      </div>
+
+      {/* TRIDOSHA CONSTITUTIONAL EQUILIBRIUM CARD */}
+      <div className="bg-gradient-to-br from-emerald-900 to-slate-950 text-white p-8 md:p-10 rounded-[3rem] shadow-xl relative overflow-hidden">
+        <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-400 to-transparent pointer-events-none" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center relative z-10">
+          <div className="md:col-span-2 space-y-4">
+            <span className="text-xs font-black uppercase tracking-widest text-emerald-400 bg-emerald-950/60 border border-emerald-800 px-3 py-1 rounded-full">
+              Constitutional Equilibrium
+            </span>
+            <h3 className="text-3xl md:text-4xl font-black">
+              Current Baseline: {latestDosha.split(" ")[0]}
+            </h3>
+            <p className="text-slate-300 text-sm md:text-base leading-relaxed max-w-xl">
+              Your physiological constitution reflects dynamic equilibrium across the three biological forces. Maintaining regular seasonal diet and stress management sustains this balance.
+            </p>
+            <div className="grid grid-cols-3 gap-4 pt-4">
+              <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 text-center">
+                <span className="text-xs font-bold text-slate-400 uppercase">Vata (Air)</span>
+                <p className="text-2xl font-black text-cyan-400 mt-1">{vataRatio}%</p>
+              </div>
+              <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 text-center">
+                <span className="text-xs font-bold text-slate-400 uppercase">Pitta (Fire)</span>
+                <p className="text-2xl font-black text-amber-400 mt-1">{pittaRatio}%</p>
+              </div>
+              <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 text-center">
+                <span className="text-xs font-bold text-slate-400 uppercase">Kapha (Earth)</span>
+                <p className="text-2xl font-black text-emerald-400 mt-1">{kaphaRatio}%</p>
+              </div>
+            </div>
+          </div>
+
+          {/* SVG RADAR / TRIANGLE CHART */}
+          <div className="flex flex-col items-center justify-center p-4">
+            <svg viewBox="0 0 200 200" className="w-48 h-48 drop-shadow-md">
+              <polygon points="100,20 180,165 20,165" fill="rgba(16, 185, 129, 0.15)" stroke="rgba(52, 211, 153, 0.6)" strokeWidth="2" />
+              <line x1="100" y1="100" x2="100" y2="20" stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3" />
+              <line x1="100" y1="100" x2="180" y2="165" stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3" />
+              <line x1="100" y1="100" x2="20" y2="165" stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3" />
+              <circle cx="100" cy="95" r="8" fill="#10b981" stroke="#ffffff" strokeWidth="2" className="animate-pulse" />
+              <text x="100" y="15" textAnchor="middle" fill="#67e8f9" fontSize="10" fontWeight="bold">VATA</text>
+              <text x="185" y="180" textAnchor="middle" fill="#fcd34d" fontSize="10" fontWeight="bold">PITTA</text>
+              <text x="18" y="180" textAnchor="middle" fill="#6ee7b7" fontSize="10" fontWeight="bold">KAPHA</text>
+            </svg>
+            <span className="text-xs text-slate-400 font-bold mt-2">Tridosha Balance Radar</span>
+          </div>
+        </div>
+      </div>
+
+      {/* FILTER TABS */}
+      <div className="flex gap-2 border-b border-slate-200 pb-2">
+        <button
+          onClick={() => setActiveTab("all")}
+          className={`px-5 py-2.5 rounded-xl font-bold text-sm transition ${activeTab === "all" ? "bg-slate-950 text-white" : "text-slate-500 hover:bg-slate-100"}`}
+        >
+          All Activities ({logs.length + prescriptions.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("prescriptions")}
+          className={`px-5 py-2.5 rounded-xl font-bold text-sm transition ${activeTab === "prescriptions" ? "bg-slate-950 text-white" : "text-slate-500 hover:bg-slate-100"}`}
+        >
+          Doctor Prescriptions ({prescriptions.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("logs")}
+          className={`px-5 py-2.5 rounded-xl font-bold text-sm transition ${activeTab === "logs" ? "bg-slate-950 text-white" : "text-slate-500 hover:bg-slate-100"}`}
+        >
+          Symptom Diary Logs ({logs.length})
+        </button>
+      </div>
+
+      {/* TIMELINE VIEW */}
+      {loading ? (
+        <div className="text-center py-20 text-slate-400 font-bold">Loading your personal health archive...</div>
+      ) : logs.length === 0 && prescriptions.length === 0 ? (
+        <div className="bg-white p-12 rounded-[2rem] border border-slate-200 text-center space-y-4">
+          <Leaf size={48} className="mx-auto text-emerald-500 opacity-60" />
+          <h3 className="text-2xl font-black text-slate-900">No Records Logged Yet</h3>
+          <p className="text-slate-500 max-w-md mx-auto">
+            Log your daily symptoms under Quick Checkup or ask your practitioner for your personalized Ayurvedic protocol.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {activeTab !== "logs" && prescriptions.map((presc) => (
+            <div key={presc.id} className="bg-white p-6 md:p-8 rounded-[2rem] border-2 border-slate-100 shadow-sm hover:border-emerald-200 transition">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+                <span className="text-xs font-black uppercase tracking-widest text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-md flex items-center gap-1">
+                  <ClipboardCheck size={14} /> Clinical Consultation Record
+                </span>
+                <span className="text-xs font-bold text-slate-400">
+                  {presc.createdAt ? presc.createdAt.toDate().toLocaleDateString() : "Recent"}
+                </span>
+              </div>
+              <h4 className="text-xl font-black text-slate-900 mb-2">
+                Personalized {presc.dosha?.split(" ")[0] || "Ayurvedic"} Balancing Protocol
+              </h4>
+              <p className="text-slate-600 text-sm mb-4">
+                <strong>Symptoms Reported:</strong> {presc.symptoms || "General health consultation"}
+              </p>
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center gap-2 text-xs font-bold text-emerald-800">
+                <Shield size={16} className="text-emerald-600 flex-shrink-0" />
+                Verified by Doctor • Clinic ID: {userData?.clinicId}
+              </div>
+            </div>
+          ))}
+
+          {activeTab !== "prescriptions" && logs.map((log) => (
+            <div key={log.id} className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-100 shadow-sm space-y-3">
+              <div className="flex justify-between items-center text-xs font-bold">
+                <span className="text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1 rounded-md flex items-center gap-1">
+                  <Activity size={14} /> Patient Symptom Log
+                </span>
+                <span className="text-slate-400">
+                  {log.createdAt ? log.createdAt.toDate().toLocaleDateString() : "Recent"}
+                </span>
+              </div>
+              <p className="text-slate-800 text-base font-medium">"{log.symptoms}"</p>
+              <p className="text-xs text-slate-400">Securely archived to Clinic {log.clinicId}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
 // --- PROFILE SETTINGS COMPONENT ---
 function ProfileSettings({
   user,
@@ -901,6 +1167,11 @@ function DiagnosticTool({ userData }: { userData: UserData | null }) {
     symptoms: "",
   });
 
+  const [currentMeds, setCurrentMeds] = useState("");
+  const [allergiesInput, setAllergiesInput] = useState("");
+  const [enableSmartwatchSync, setEnableSmartwatchSync] = useState(false);
+  const [smartwatchProfile, setSmartwatchProfile] = useState<"vata_stress" | "pitta_heat" | "kapha_calm">("vata_stress");
+
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const renderUrl = localStorage.getItem("renderUrl") || "";
   const geminiApiKey = localStorage.getItem("geminiApiKey") || "";
@@ -983,8 +1254,17 @@ function DiagnosticTool({ userData }: { userData: UserData | null }) {
     setError(null);
     setSavedSuccess(false);
     try {
+      const medsArray = currentMeds
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const allergiesArray = allergiesInput
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+
       // Map formData to Backend API structure
-      const apiPayload = {
+      const apiPayload: any = {
         Symptoms: formData.symptoms,
         Age: parseInt(formData.age),
         Height_cm: parseInt(formData.height || "170"),
@@ -993,10 +1273,49 @@ function DiagnosticTool({ userData }: { userData: UserData | null }) {
         Body_Type_Dosha_Sanskrit: formData.dosha,
         Season: formData.season,
         Food_Habits: "Mixed", 
-        Current_Medication: "None",
-        Allergies: "None",
-        Weather: "Clear"
+        Current_Medication: currentMeds.trim() || "None",
+        Allergies: allergiesInput.trim() || "None",
+        Weather: "Clear",
+        current_medications: medsArray,
+        allergies: allergiesArray
       };
+
+      if (enableSmartwatchSync) {
+        if (smartwatchProfile === "pitta_heat") {
+          apiPayload.smartwatch_telemetry = {
+            device_name: "Garmin Fenix 7",
+            resting_heart_rate: 88.0,
+            hrv_rmssd: 38.0,
+            skin_temp_celsius: 37.4,
+            spo2_pct: 99.0,
+            respiratory_rate: 17.0,
+            sleep_efficiency_pct: 82.0,
+            stress_index: 52.0
+          };
+        } else if (smartwatchProfile === "kapha_calm") {
+          apiPayload.smartwatch_telemetry = {
+            device_name: "Fitbit Charge 6",
+            resting_heart_rate: 56.0,
+            hrv_rmssd: 78.0,
+            skin_temp_celsius: 36.4,
+            spo2_pct: 99.0,
+            respiratory_rate: 12.0,
+            sleep_efficiency_pct: 94.0,
+            stress_index: 18.0
+          };
+        } else {
+          apiPayload.smartwatch_telemetry = {
+            device_name: "Apple Watch Series 9",
+            resting_heart_rate: 78.0,
+            hrv_rmssd: 22.0,
+            skin_temp_celsius: 36.2,
+            spo2_pct: 98.0,
+            respiratory_rate: 19.0,
+            sleep_efficiency_pct: 68.0,
+            stress_index: 72.0
+          };
+        }
+      }
 
       // Determine API URL based on environment or user input
       const API_BASE_URL = renderUrl || import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -1345,18 +1664,121 @@ Provide a concise, easy to read explanation and a personalized plan featuring he
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="space-y-10"
+                  className="space-y-8"
                 >
                   <h1 className="text-4xl md:text-5xl font-black text-slate-950 tracking-tighter">
-                    3. Clinical Symptoms
+                    3. Clinical Symptoms & Safety Parameters
                   </h1>
-                  <textarea
-                    name="symptoms"
-                    value={formData.symptoms}
-                    onChange={handleInputChange}
-                    className="w-full p-8 h-80 text-xl md:text-2xl font-medium rounded-[2rem] border-2 border-slate-200/60 bg-slate-50 focus:ring-4 focus:ring-emerald-200 outline-none resize-none shadow-inner"
-                    placeholder="e.g. persistent chills and high fever for 3 days..."
-                  ></textarea>
+                  <div className="space-y-3">
+                    <label className="text-lg font-bold text-slate-700">
+                      Reported Symptoms & Progression
+                    </label>
+                    <textarea
+                      name="symptoms"
+                      value={formData.symptoms}
+                      onChange={handleInputChange}
+                      className="w-full p-8 h-48 text-xl font-medium rounded-[2rem] border-2 border-slate-200/60 bg-slate-50 focus:ring-4 focus:ring-emerald-200 outline-none resize-none shadow-inner"
+                      placeholder="e.g. persistent chills, body ache, dry cough, and high fever for 3 days..."
+                    ></textarea>
+                  </div>
+
+                  {/* HERB-DRUG INTERACTION & ALLERGY SCREENING (HDI ENGINE) */}
+                  <div className="bg-slate-50 p-6 md:p-8 rounded-[2.5rem] border-2 border-slate-200/60 space-y-6">
+                    <div className="flex items-center gap-3">
+                      <Shield className="text-emerald-600" size={24} />
+                      <div>
+                        <h4 className="font-black text-slate-900 text-lg">
+                          Herb-Drug Interaction (HDI) & Allergy Screening
+                        </h4>
+                        <p className="text-slate-500 text-xs font-semibold">
+                          Screen proposed Ayurvedic remedies against concurrent allopathic pharmacotherapy and known patient allergies.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700">
+                          Current Medications (comma separated)
+                        </label>
+                        <input
+                          type="text"
+                          value={currentMeds}
+                          onChange={(e) => setCurrentMeds(e.target.value)}
+                          placeholder="e.g. Warfarin, Metformin, Aspirin"
+                          className="w-full p-4 rounded-2xl border border-slate-200 bg-white font-medium text-sm focus:ring-2 focus:ring-emerald-300 outline-none"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700">
+                          Known Allergies (comma separated)
+                        </label>
+                        <input
+                          type="text"
+                          value={allergiesInput}
+                          onChange={(e) => setAllergiesInput(e.target.value)}
+                          placeholder="e.g. Honey, Latex, Pollen"
+                          className="w-full p-4 rounded-2xl border border-slate-200 bg-white font-medium text-sm focus:ring-2 focus:ring-emerald-300 outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SMARTWATCH TELEMETRY INTEGRATION (DIGITAL NADI PARIKSHA) */}
+                  <div className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white p-6 md:p-8 rounded-[2.5rem] border border-indigo-900/40 space-y-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      <div className="flex items-center gap-3">
+                        <HeartPulse className="text-emerald-400 animate-pulse" size={24} />
+                        <div>
+                          <h4 className="font-black text-white text-lg">
+                            Smartwatch Telemetry Integration (Issue #8)
+                          </h4>
+                          <p className="text-slate-400 text-xs font-medium">
+                            Synthesize real-time wearable biometrics (HR, HRV RMSSD, skin temp, SpO2) into Digital Nadi Pariksha.
+                          </p>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={enableSmartwatchSync}
+                          onChange={(e) => setEnableSmartwatchSync(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-14 h-7 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500"></div>
+                      </label>
+                    </div>
+
+                    {enableSmartwatchSync && (
+                      <div className="pt-3 border-t border-slate-800 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                        <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                          Simulation Telemetry Profile:
+                        </span>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setSmartwatchProfile("vata_stress")}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${smartwatchProfile === "vata_stress" ? "bg-emerald-500 text-slate-950 font-black" : "bg-slate-800 text-slate-300"}`}
+                          >
+                            Apple Watch (Vata Stress)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSmartwatchProfile("pitta_heat")}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${smartwatchProfile === "pitta_heat" ? "bg-amber-500 text-slate-950 font-black" : "bg-slate-800 text-slate-300"}`}
+                          >
+                            Garmin Fenix (Pitta Heat)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSmartwatchProfile("kapha_calm")}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${smartwatchProfile === "kapha_calm" ? "bg-teal-400 text-slate-950 font-black" : "bg-slate-800 text-slate-300"}`}
+                          >
+                            Fitbit Charge (Kapha Calm)
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </motion.div>
               )}
 
@@ -1475,7 +1897,7 @@ Provide a concise, easy to read explanation and a personalized plan featuring he
           </div>
 
           {isLowConfidence && (
-            <div className="bg-orange-50 border-2 border-orange-200 p-6 rounded-2xl flex gap-4 items-center mb-4">
+            <div className="bg-orange-50 border-2 border-orange-200 p-6 rounded-2xl flex gap-4 items-center">
               <AlertCircle className="text-orange-600 w-8 h-8 flex-shrink-0" />
               <div>
                 <h4 className="font-black text-orange-900 text-lg">
@@ -1487,6 +1909,145 @@ Provide a concise, easy to read explanation and a personalized plan featuring he
                   this prediction.
                 </p>
               </div>
+            </div>
+          )}
+
+          {/* HDI SAFETY ALERT BANNER */}
+          {result.hdi_safety_alerts && result.hdi_safety_alerts.has_alerts && (
+            <div
+              className={`p-6 rounded-2xl flex gap-4 items-start border-2 ${
+                result.hdi_safety_alerts.max_severity === "HIGH"
+                  ? "bg-red-50 border-red-300"
+                  : result.hdi_safety_alerts.max_severity === "MODERATE"
+                  ? "bg-amber-50 border-amber-300"
+                  : "bg-yellow-50 border-yellow-200"
+              }`}
+            >
+              <Shield
+                className={`w-8 h-8 flex-shrink-0 mt-0.5 ${
+                  result.hdi_safety_alerts.max_severity === "HIGH"
+                    ? "text-red-600"
+                    : result.hdi_safety_alerts.max_severity === "MODERATE"
+                    ? "text-amber-600"
+                    : "text-yellow-600"
+                }`}
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <h4
+                    className={`font-black text-lg ${
+                      result.hdi_safety_alerts.max_severity === "HIGH"
+                        ? "text-red-900"
+                        : result.hdi_safety_alerts.max_severity === "MODERATE"
+                        ? "text-amber-900"
+                        : "text-yellow-900"
+                    }`}
+                  >
+                    HDI Safety Alert — Severity:{" "}
+                    {result.hdi_safety_alerts.max_severity}
+                  </h4>
+                  <span
+                    className={`text-xs font-black px-2 py-0.5 rounded-full ${
+                      result.hdi_safety_alerts.max_severity === "HIGH"
+                        ? "bg-red-600 text-white"
+                        : result.hdi_safety_alerts.max_severity === "MODERATE"
+                        ? "bg-amber-500 text-white"
+                        : "bg-yellow-400 text-yellow-900"
+                    }`}
+                  >
+                    {result.hdi_safety_alerts.total_alerts} Interaction
+                    {result.hdi_safety_alerts.total_alerts !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                <p
+                  className={`font-semibold text-sm mb-3 ${
+                    result.hdi_safety_alerts.max_severity === "HIGH"
+                      ? "text-red-800"
+                      : result.hdi_safety_alerts.max_severity === "MODERATE"
+                      ? "text-amber-800"
+                      : "text-yellow-800"
+                  }`}
+                >
+                  {result.hdi_safety_alerts.summary}
+                </p>
+                <div className="space-y-2">
+                  {result.hdi_safety_alerts.alerts.map((alert, idx) => (
+                    <div
+                      key={idx}
+                      className="bg-white/70 border border-red-100 p-3 rounded-xl text-xs font-bold text-slate-800"
+                    >
+                      <span className="text-red-700">
+                        {alert.herb_matched}
+                      </span>{" "}
+                      ↔{" "}
+                      <span className="text-slate-600">
+                        {alert.drug_matched}
+                      </span>
+                      {" — "}
+                      {alert.clinical_advice}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* DIGITAL NADI PARIKSHA CARD */}
+          {result.digital_nadi_telemetry && (
+            <div className="bg-gradient-to-r from-indigo-950 via-slate-900 to-slate-950 text-white p-6 md:p-8 rounded-[2.5rem] border border-indigo-900/40">
+              <div className="flex items-center gap-3 mb-6">
+                <HeartPulse className="text-emerald-400 animate-pulse" size={24} />
+                <div>
+                  <h4 className="font-black text-white text-lg">
+                    Digital Nadi Pariksha — Smartwatch Telemetry Report
+                  </h4>
+                  <p className="text-slate-400 text-xs font-medium">
+                    Live biometric synthesis via wearable sensor fusion
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 text-center">
+                  <span className="text-xs font-bold text-slate-400 uppercase block mb-1">
+                    Nadi Type
+                  </span>
+                  <p className="text-lg font-black text-emerald-400">
+                    {result.digital_nadi_telemetry.digital_nadi.nadi_type}
+                  </p>
+                </div>
+                <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 text-center">
+                  <span className="text-xs font-bold text-slate-400 uppercase block mb-1">
+                    Gati (Rhythm)
+                  </span>
+                  <p className="text-lg font-black text-cyan-400">
+                    {result.digital_nadi_telemetry.digital_nadi.gati_classification}
+                  </p>
+                </div>
+                <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 text-center">
+                  <span className="text-xs font-bold text-slate-400 uppercase block mb-1">
+                    Dominant Dosha
+                  </span>
+                  <p className="text-lg font-black text-amber-400">
+                    {result.digital_nadi_telemetry.digital_nadi.dominant_dosha}
+                  </p>
+                </div>
+                <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 text-center">
+                  <span className="text-xs font-bold text-slate-400 uppercase block mb-1">
+                    Ojas Score
+                  </span>
+                  <p className="text-lg font-black text-teal-300">
+                    {result.digital_nadi_telemetry.ojas_vitality_index.score}
+                    <span className="text-xs text-slate-400 font-medium">/100</span>
+                  </p>
+                </div>
+              </div>
+              <p className="text-slate-300 text-xs font-medium mt-4 leading-relaxed">
+                <span className="text-emerald-400 font-black">Nadi Gati:</span>{" "}
+                {result.digital_nadi_telemetry.digital_nadi.gati_description}
+                {" · "}
+                <span className="text-amber-400 font-black">Ojas Status:</span>{" "}
+                {result.digital_nadi_telemetry.ojas_vitality_index.status}
+              </p>
             </div>
           )}
 
@@ -1983,6 +2544,10 @@ export default function App() {
                     path="/patients"
                     element={<PatientRecords userData={userData} />}
                   />
+                  <Route
+                    path="/my-records"
+                    element={<MyPersonalRecords user={user} userData={userData} />}
+                  />
                 </>
               ) : (
                 <>
@@ -1998,14 +2563,7 @@ export default function App() {
                   />
                   <Route
                     path="/my-records"
-                    element={
-                      <div className="p-10">
-                        <h1 className="text-3xl font-black">
-                          My Personal Records
-                        </h1>
-                        <p className="text-slate-500">Feature coming soon.</p>
-                      </div>
-                    }
+                    element={<MyPersonalRecords user={user} userData={userData} />}
                   />
                 </>
               )}
